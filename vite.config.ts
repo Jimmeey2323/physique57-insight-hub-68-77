@@ -28,6 +28,7 @@ export default defineConfig(({ mode }) => ({
           'ui-vendor': ['@radix-ui/react-tabs', '@radix-ui/react-dialog', '@radix-ui/react-select', '@radix-ui/react-popover'],
           'chart-vendor': ['recharts'],
           'utils-vendor': ['date-fns', 'clsx', 'tailwind-merge', 'class-variance-authority'],
+          'proxy': ['@tanstack/react-query'],
           // Separate dashboard components into their own chunk
           'dashboard-components': [
             '/src/components/dashboard/SessionsSection',
