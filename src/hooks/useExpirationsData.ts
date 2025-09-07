@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ExpirationData } from '@/types/dashboard';
 
 const GOOGLE_CONFIG = {
@@ -38,7 +38,7 @@ export const useExpirationsData = () => {
     }
   };
 
-  const fetchExpirationsData = async () => {
+  const fetchExpirationsData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -140,11 +140,11 @@ export const useExpirationsData = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchExpirationsData();
-  }, []);
+  }, [fetchExpirationsData]);
 
   return { 
     data, 

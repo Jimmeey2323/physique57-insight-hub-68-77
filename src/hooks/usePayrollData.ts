@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { PayrollData } from '@/types/dashboard';
 
 const GOOGLE_CONFIG = {
@@ -45,7 +45,7 @@ export const usePayrollData = () => {
     return isNaN(parsed) ? 0 : parsed;
   };
 
-  const fetchPayrollData = async () => {
+  const fetchPayrollData = useCallback(async () => {
     try {
       console.log('Fetching payroll data from Google Sheets...');
       setIsLoading(true);
@@ -125,11 +125,11 @@ export const usePayrollData = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchPayrollData();
-  }, []);
+  }, [fetchPayrollData]);
 
   return { data, isLoading, error, refetch: fetchPayrollData };
 };

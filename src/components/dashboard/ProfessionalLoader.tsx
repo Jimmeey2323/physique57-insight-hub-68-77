@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BarChart3, TrendingUp, Activity, Zap } from 'lucide-react';
+import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 
 interface ProfessionalLoaderProps {
   title?: string;
@@ -14,14 +15,25 @@ export const ProfessionalLoader: React.FC<ProfessionalLoaderProps> = ({
 }) => {
   const [progress, setProgress] = useState(0);
   const [loadingPhase, setLoadingPhase] = useState(0);
+  const { loadingMessage, progress: globalProgress } = useGlobalLoading();
 
   useEffect(() => {
+    // Use global progress if available, otherwise use local animation
+    const targetProgress = globalProgress > 0 ? globalProgress : progress;
+    
     const progressInterval = setInterval(() => {
       setProgress(prev => {
-        if (prev >= 100) {
-          return 0; // Reset to create smooth continuous animation
+        if (globalProgress > 0) {
+          // Smoothly animate to global progress
+          const diff = globalProgress - prev;
+          return prev + Math.max(diff * 0.1, 0.5);
+        } else {
+          // Default continuous animation
+          if (prev >= 100) {
+            return 0; // Reset to create smooth continuous animation
+          }
+          return prev + 2;
         }
-        return prev + 2;
       });
     }, 50); // Faster, smoother progress updates
 
@@ -33,7 +45,7 @@ export const ProfessionalLoader: React.FC<ProfessionalLoaderProps> = ({
       clearInterval(progressInterval);
       clearInterval(phaseInterval);
     };
-  }, []);
+  }, [globalProgress]);
 
   const getIcon = () => {
     switch (variant) {
@@ -167,7 +179,9 @@ export const ProfessionalLoader: React.FC<ProfessionalLoaderProps> = ({
         {/* Dynamic Status Text */}
         <div className="text-sm text-slate-500 flex items-center space-x-2 h-6">
           <div className="w-2 h-2 bg-green-500 rounded-full animate-ping"></div>
-          <span className="transition-opacity duration-300">{getLoadingMessages()}</span>
+          <span className="transition-opacity duration-300">
+            {loadingMessage || getLoadingMessages()}
+          </span>
         </div>
       </div>
 

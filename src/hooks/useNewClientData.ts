@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { NewClientData } from '@/types/dashboard';
 
 const GOOGLE_CONFIG = {
@@ -61,7 +61,7 @@ export const useNewClientData = () => {
     return `${year}-${month}`;
   };
 
-  const fetchNewClientData = async () => {
+  const fetchNewClientData = useCallback(async () => {
     try {
       setLoading(true);
       const accessToken = await getAccessToken();
@@ -128,11 +128,11 @@ export const useNewClientData = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchNewClientData();
-  }, []);
+  }, [fetchNewClientData]);
 
   return { data, loading, error, refetch: fetchNewClientData };
 };

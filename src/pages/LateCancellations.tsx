@@ -1,14 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLateCancellationsData } from '@/hooks/useLateCancellationsData';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
-import { RefinedLoader } from '@/components/ui/RefinedLoader';
+import { ProfessionalLoader } from '@/components/dashboard/ProfessionalLoader';
 import { LateCancellationsMetricCards } from '@/components/dashboard/LateCancellationsMetricCards';
 import { LateCancellationsInteractiveCharts } from '@/components/dashboard/LateCancellationsInteractiveCharts';
 import { EnhancedLateCancellationsTopBottomLists } from '@/components/dashboard/EnhancedLateCancellationsTopBottomLists';
 import { EnhancedLateCancellationsDataTables } from '@/components/dashboard/EnhancedLateCancellationsDataTables';
 import { EnhancedLateCancellationsFilterSection } from '@/components/dashboard/EnhancedLateCancellationsFilterSection';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Home, XCircle } from 'lucide-react';
 import { Footer } from '@/components/ui/footer';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
@@ -18,8 +20,10 @@ const LateCancellations = () => {
   const { isLoading, setLoading } = useGlobalLoading();
   const navigate = useNavigate();
   
+  // Location state for tabs
+  const [activeLocation, setActiveLocation] = useState('all');
+  
   // Enhanced filter states
-  const [selectedLocation, setSelectedLocation] = useState('all');
   const [selectedTimeframe, setSelectedTimeframe] = useState('all');
   const [selectedTrainer, setSelectedTrainer] = useState('all');
   const [selectedClass, setSelectedClass] = useState('all');
@@ -27,22 +31,44 @@ const LateCancellations = () => {
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('all');
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
   
-  // Get unique locations for filter
-  const locations = React.useMemo(() => {
-    if (!Array.isArray(lateCancellationsData)) return [];
-    return Array.from(new Set(lateCancellationsData.map(item => item?.location).filter(Boolean)));
-  }, [lateCancellationsData]);
+  // Define locations for tabs
+  const locations = useMemo(() => {
+    const predefinedLocations = [
+      { id: 'all', name: 'All Locations', fullName: 'All Locations' },
+      { id: 'kwality', name: 'Kwality House', fullName: 'Kwality House, Kemps Corner' },
+      { id: 'supreme', name: 'Supreme HQ', fullName: 'Supreme HQ, Bandra' },
+      { id: 'kenkere', name: 'Kenkere House', fullName: 'Kenkere House, Bengaluru' }
+    ];
+    
+    return predefinedLocations;
+  }, []);
+  
+  // Filter data by location first
+  const locationFilteredData = useMemo(() => {
+    if (!Array.isArray(lateCancellationsData) || activeLocation === 'all') {
+      return lateCancellationsData || [];
+    }
+    
+    return lateCancellationsData.filter(item => {
+      const itemLocation = item?.location?.toLowerCase() || '';
+      switch (activeLocation) {
+        case 'kwality':
+          return itemLocation.includes('kwality') || itemLocation.includes('kemps');
+        case 'supreme':
+          return itemLocation.includes('supreme') || itemLocation.includes('bandra');
+        case 'kenkere':
+          return itemLocation.includes('kenkere') || itemLocation.includes('bengaluru');
+        default:
+          return true;
+      }
+    });
+  }, [lateCancellationsData, activeLocation]);
   
   // Enhanced filter data based on all selected filters
-  const filteredData = React.useMemo(() => {
-    if (!Array.isArray(lateCancellationsData)) return [];
+  const filteredData = useMemo(() => {
+    if (!Array.isArray(locationFilteredData)) return [];
     
-    let filtered = lateCancellationsData;
-    
-    // Location filter
-    if (selectedLocation !== 'all') {
-      filtered = filtered.filter(item => item?.location === selectedLocation);
-    }
+    let filtered = locationFilteredData;
     
     // Trainer filter
     if (selectedTrainer !== 'all') {
@@ -82,7 +108,7 @@ const LateCancellations = () => {
     // Timeframe filter
     if (selectedTimeframe !== 'all') {
       const now = new Date();
-      let startDate = new Date();
+      const startDate = new Date();
       
       switch (selectedTimeframe) {
         case '1w':
@@ -126,11 +152,10 @@ const LateCancellations = () => {
     }
     
     return filtered;
-  }, [lateCancellationsData, selectedLocation, selectedTimeframe, selectedTrainer, selectedClass, selectedProduct, selectedTimeSlot, dateRange]);
+  }, [locationFilteredData, selectedTimeframe, selectedTrainer, selectedClass, selectedProduct, selectedTimeSlot, dateRange]);
 
   // Clear all filters function
   const clearAllFilters = () => {
-    setSelectedLocation('all');
     setSelectedTimeframe('all');
     setSelectedTrainer('all');
     setSelectedClass('all');
@@ -144,7 +169,7 @@ const LateCancellations = () => {
   }, [loading, setLoading]);
 
   if (isLoading) {
-    return <RefinedLoader subtitle="Loading late cancellations analytics data..." />;
+    return <ProfessionalLoader variant="analytics" subtitle="Loading late cancellations analytics data..." />;
   }
 
   return (
@@ -226,37 +251,64 @@ const LateCancellations = () => {
       <div className="relative">
         <div className="container mx-auto px-6 py-8">
           <div className="space-y-8">
-            {/* Enhanced Filter Section */}
-            <EnhancedLateCancellationsFilterSection
-              selectedLocation={selectedLocation}
-              onLocationChange={setSelectedLocation}
-              selectedTimeframe={selectedTimeframe}
-              onTimeframeChange={setSelectedTimeframe}
-              selectedTrainer={selectedTrainer}
-              onTrainerChange={setSelectedTrainer}
-              selectedClass={selectedClass}
-              onClassChange={setSelectedClass}
-              selectedProduct={selectedProduct}
-              onProductChange={setSelectedProduct}
-              selectedTimeSlot={selectedTimeSlot}
-              onTimeSlotChange={setSelectedTimeSlot}
-              dateRange={dateRange}
-              onDateRangeChange={setDateRange}
-              data={lateCancellationsData}
-              onClearFilters={clearAllFilters}
-            />
-            
-            {/* Metric Cards */}
-            <LateCancellationsMetricCards data={filteredData} />
-            
-            {/* Interactive Charts */}
-            <LateCancellationsInteractiveCharts data={filteredData} />
-            
-            {/* Enhanced Top/Bottom Lists (Side by Side) */}
-            <EnhancedLateCancellationsTopBottomLists data={filteredData} />
-            
-            {/* Enhanced Detailed Data Tables with Pagination */}
-            <EnhancedLateCancellationsDataTables data={filteredData} />
+            {/* Location Tabs */}
+            <Card className="bg-white/80 backdrop-blur-sm shadow-xl border-0 overflow-hidden">
+              <CardContent className="p-2">
+                <Tabs value={activeLocation} onValueChange={setActiveLocation} className="w-full">
+                  <TabsList className="grid w-full grid-cols-4 bg-gradient-to-r from-slate-100 to-slate-200 p-2 rounded-2xl h-auto gap-2">
+                    {locations.map((location) => (
+                      <TabsTrigger
+                        key={location.id}
+                        value={location.id}
+                        className="rounded-xl px-6 py-4 font-semibold text-sm transition-all duration-300"
+                      >
+                        <div className="text-center">
+                          <div className="font-bold">{location.name}</div>
+                          <div className="text-xs opacity-75">{location.fullName}</div>
+                        </div>
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+
+                  {/* Tab Content */}
+                  {locations.map((location) => (
+                    <TabsContent key={location.id} value={location.id} className="space-y-8 mt-8">
+                      {/* Enhanced Filter Section */}
+                      <EnhancedLateCancellationsFilterSection
+                        selectedLocation="all" // Not used anymore, always "all" for current tab
+                        onLocationChange={() => {}} // Not used anymore
+                        selectedTimeframe={selectedTimeframe}
+                        onTimeframeChange={setSelectedTimeframe}
+                        selectedTrainer={selectedTrainer}
+                        onTrainerChange={setSelectedTrainer}
+                        selectedClass={selectedClass}
+                        onClassChange={setSelectedClass}
+                        selectedProduct={selectedProduct}
+                        onProductChange={setSelectedProduct}
+                        selectedTimeSlot={selectedTimeSlot}
+                        onTimeSlotChange={setSelectedTimeSlot}
+                        dateRange={dateRange}
+                        onDateRangeChange={setDateRange}
+                        data={locationFilteredData}
+                        onClearFilters={clearAllFilters}
+                      />
+                      
+                      {/* Metric Cards */}
+                      <LateCancellationsMetricCards data={filteredData} />
+                      
+                      {/* Interactive Charts */}
+                      <LateCancellationsInteractiveCharts data={filteredData} />
+                      
+                      {/* Enhanced Top/Bottom Lists (Side by Side) */}
+                      <EnhancedLateCancellationsTopBottomLists data={filteredData} />
+                      
+                      {/* Enhanced Detailed Data Tables with Pagination */}
+                      <EnhancedLateCancellationsDataTables data={filteredData} />
+                    </TabsContent>
+                  ))}
+                </Tabs>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { LeadsData } from '@/types/leads';
 
 const GOOGLE_CONFIG = {
@@ -113,7 +113,7 @@ export const useLeadsData = () => {
     }
   };
 
-  const fetchLeadsData = async () => {
+  const fetchLeadsData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -210,11 +210,11 @@ export const useLeadsData = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchLeadsData();
-  }, []);
+  }, [fetchLeadsData]);
 
   return { data, loading, error, refetch: fetchLeadsData };
 };

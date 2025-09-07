@@ -28,7 +28,7 @@ const ClientRetention = () => {
   const navigate = useNavigate();
   const [selectedLocation, setSelectedLocation] = useState('All Locations');
   const [activeTable, setActiveTable] = useState('monthonmonth');
-  const [drillDownModal, setDrillDownModal] = useState({ isOpen: false, client: null, title: '', data: null, type: 'month' as any });
+  const [drillDownModal, setDrillDownModal] = useState<{ isOpen: boolean; client: any; title: string; data: any; type: 'month' | 'year' | 'class' }>({ isOpen: false, client: null, title: '', data: null, type: 'month' });
   
   // Get previous month date range function
   const getPreviousMonthRange = () => {

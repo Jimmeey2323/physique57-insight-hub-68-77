@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { LateCancellationsData } from '@/types/dashboard';
 
 const GOOGLE_CONFIG = {
@@ -53,7 +53,7 @@ export const useLateCancellationsData = () => {
     return isNaN(parsed) ? 0 : parsed;
   };
 
-  const fetchLateCancellationsData = async () => {
+  const fetchLateCancellationsData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -148,11 +148,11 @@ export const useLateCancellationsData = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchLateCancellationsData();
-  }, []);
+  }, [fetchLateCancellationsData]);
 
   return { data, loading, error, refetch: fetchLateCancellationsData };
 };
