@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { RefinedLoader } from '@/components/ui/RefinedLoader';
+import { ProfessionalLoader } from '@/components/dashboard/ProfessionalLoader';
 import { useSalesData } from '@/hooks/useSalesData';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { EnhancedDiscountsDashboard } from '@/components/dashboard/EnhancedDiscountsDashboard';
@@ -60,7 +60,7 @@ const DiscountsPromotions: React.FC = () => {
   }, [loading, setLoading]);
 
   if (loading) {
-    return <RefinedLoader subtitle="Loading discount and promotional analysis..." />;
+    return <ProfessionalLoader variant="sales" subtitle="Loading discount and promotional analysis..." />;
   }
 
   if (error) {

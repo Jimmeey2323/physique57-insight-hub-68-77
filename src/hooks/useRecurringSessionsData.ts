@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 export interface RecurringSessionData {
   trainerId: string;
@@ -88,7 +88,7 @@ export const useRecurringSessionsData = () => {
     return isNaN(parsed) ? 0 : parsed;
   };
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       const accessToken = await getAccessToken();
@@ -233,11 +233,11 @@ export const useRecurringSessionsData = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   return { data, teacherData, loading, error, refetch: fetchData };
 };

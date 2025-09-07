@@ -5,7 +5,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { GlobalNoteTaker } from "@/components/ui/GlobalNoteTaker";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { ProfessionalLoader } from "@/components/dashboard/ProfessionalLoader";
 
 // Lazy load pages for better performance
@@ -31,23 +31,25 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <GlobalNoteTaker />
         <Suspense fallback={<ProfessionalLoader variant="analytics" subtitle="Loading page..." />}>
           <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/executive-summary" element={<ExecutiveSummary />} />
-            <Route path="/sales-analytics" element={<SalesAnalytics />} />
-            <Route path="/funnel-leads" element={<FunnelLeads />} />
-            <Route path="/client-retention" element={<ClientRetention />} />
-            <Route path="/trainer-performance" element={<TrainerPerformance />} />
-            <Route path="/class-attendance" element={<ClassAttendance />} />
-            <Route path="/discounts-promotions" element={<DiscountsPromotions />} />
-            <Route path="/sessions" element={<Sessions />} />
-            <Route path="/powercycle-vs-barre" element={<PowerCycleVsBarre />} />
-            <Route path="/expiration-analytics" element={<ExpirationAnalytics />} />
-            <Route path="/late-cancellations" element={<LateCancellations />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
+            {/* Dashboard routes wrapped in DashboardLayout */}
+            <Route path="/" element={<DashboardLayout />}>
+              <Route index element={<Index />} />
+              <Route path="executive-summary" element={<ExecutiveSummary />} />
+              <Route path="sales-analytics" element={<SalesAnalytics />} />
+              <Route path="funnel-leads" element={<FunnelLeads />} />
+              <Route path="client-retention" element={<ClientRetention />} />
+              <Route path="trainer-performance" element={<TrainerPerformance />} />
+              <Route path="class-attendance" element={<ClassAttendance />} />
+              <Route path="discounts-promotions" element={<DiscountsPromotions />} />
+              <Route path="sessions" element={<Sessions />} />
+              <Route path="powercycle-vs-barre" element={<PowerCycleVsBarre />} />
+              <Route path="expiration-analytics" element={<ExpirationAnalytics />} />
+              <Route path="late-cancellations" element={<LateCancellations />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Route>
           </Routes>
         </Suspense>
       </BrowserRouter>

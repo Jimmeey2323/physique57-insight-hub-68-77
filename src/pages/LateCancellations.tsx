@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLateCancellationsData } from '@/hooks/useLateCancellationsData';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
-import { RefinedLoader } from '@/components/ui/RefinedLoader';
+import { ProfessionalLoader } from '@/components/dashboard/ProfessionalLoader';
 import { LateCancellationsMetricCards } from '@/components/dashboard/LateCancellationsMetricCards';
 import { LateCancellationsInteractiveCharts } from '@/components/dashboard/LateCancellationsInteractiveCharts';
 import { EnhancedLateCancellationsTopBottomLists } from '@/components/dashboard/EnhancedLateCancellationsTopBottomLists';
@@ -169,7 +169,7 @@ const LateCancellations = () => {
   }, [loading, setLoading]);
 
   if (isLoading) {
-    return <RefinedLoader subtitle="Loading late cancellations analytics data..." />;
+    return <ProfessionalLoader variant="analytics" subtitle="Loading late cancellations analytics data..." />;
   }
 
   return (

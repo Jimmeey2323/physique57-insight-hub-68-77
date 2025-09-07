@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 export interface SessionData {
   trainerId: string;
@@ -80,7 +80,7 @@ export const useSessionsData = () => {
     return isNaN(parsed) ? 0 : parsed;
   };
 
-  const fetchSessionsData = async () => {
+  const fetchSessionsData = useCallback(async () => {
     try {
       setLoading(true);
       const accessToken = await getAccessToken();
@@ -153,11 +153,11 @@ export const useSessionsData = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchSessionsData();
-  }, []);
+  }, [fetchSessionsData]);
 
   return { data, loading, error, refetch: fetchSessionsData };
 };
