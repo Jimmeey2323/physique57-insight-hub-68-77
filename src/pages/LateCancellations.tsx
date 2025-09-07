@@ -108,7 +108,7 @@ const LateCancellations = () => {
     // Timeframe filter
     if (selectedTimeframe !== 'all') {
       const now = new Date();
-      let startDate = new Date();
+      const startDate = new Date();
       
       switch (selectedTimeframe) {
         case '1w':
