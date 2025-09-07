@@ -25,6 +25,8 @@ interface GroupedClassData {
   totalCheckIns: number;
   totalCapacity: number;
   sessionCount: number;
+  totalLateCancelled: number;
+  avgLateCancelled: number;
 }
 
 export const ClassPerformanceRankingTable: React.FC<ClassPerformanceRankingTableProps> = ({ data }) => {
@@ -56,8 +58,10 @@ export const ClassPerformanceRankingTable: React.FC<ClassPerformanceRankingTable
     const totalCheckIns = sessions.reduce((sum, s) => sum + s.checkedInCount, 0);
     const totalRevenue = sessions.reduce((sum, s) => sum + (s.revenue || s.totalPaid || 0), 0);
     const totalCapacity = sessions.reduce((sum, s) => sum + s.capacity, 0);
+    const totalLateCancelled = sessions.reduce((sum, s) => sum + (s.lateCancelledCount || 0), 0);
     const avgCheckIns = totalCheckIns / sessions.length;
     const fillPercentage = totalCapacity > 0 ? (totalCheckIns / totalCapacity) * 100 : 0;
+    const avgLateCancelled = totalLateCancelled / sessions.length;
 
     return {
       uniqueId,
@@ -72,7 +76,9 @@ export const ClassPerformanceRankingTable: React.FC<ClassPerformanceRankingTable
       fillPercentage,
       totalRevenue,
       totalCheckIns,
-      totalCapacity
+      totalCapacity,
+      totalLateCancelled,
+      avgLateCancelled
     };
   });
 
@@ -100,8 +106,10 @@ export const ClassPerformanceRankingTable: React.FC<ClassPerformanceRankingTable
                   <TableHead className="text-white font-bold">Time</TableHead>
                   <TableHead className="text-white font-bold">Location</TableHead>
                   <TableHead className="text-white font-bold">Sessions</TableHead>
-                  <TableHead className="text-white font-bold">Avg Check-ins</TableHead>
-                  <TableHead className="text-white font-bold">Fill %</TableHead>
+                  <TableHead className="text-white font-bold">Class Avg</TableHead>
+                  <TableHead className="text-white font-bold">Fill Rate</TableHead>
+                  <TableHead className="text-white font-bold">Attendance</TableHead>
+                  <TableHead className="text-white font-bold">Late Cancelled</TableHead>
                   <TableHead className="text-white font-bold">Revenue</TableHead>
                   <TableHead className="text-white font-bold">Actions</TableHead>
                 </TableRow>
@@ -150,6 +158,14 @@ export const ClassPerformanceRankingTable: React.FC<ClassPerformanceRankingTable
                     <TableCell className="text-center">
                       <Badge variant={classData.fillPercentage >= 80 ? 'default' : classData.fillPercentage >= 60 ? 'secondary' : 'destructive'}>
                         {classData.fillPercentage.toFixed(1)}%
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-center font-semibold">
+                      {classData.totalCheckIns}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant="outline">
+                        {classData.avgLateCancelled.toFixed(1)}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right font-semibold">

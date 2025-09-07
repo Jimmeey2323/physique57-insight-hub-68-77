@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { LateCancellationsData } from '@/types/dashboard';
+import { LateCancellationsDrillDownModal } from '@/components/dashboard/LateCancellationsDrillDownModal';
 import { formatNumber } from '@/utils/formatters';
 import { AlertTriangle, Users, Calendar, Package, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -17,6 +18,7 @@ const ITEMS_PER_PAGE = 100;
 export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellationsDataTablesProps> = ({ data }) => {
   const [activeTab, setActiveTab] = useState('multiple-day');
   const [currentPage, setCurrentPage] = useState(1);
+  const [drillDownModal, setDrillDownModal] = useState({ isOpen: false, data: null, title: '' });
 
   // Members cancelling more than 1 class per day
   const multipleCancellationsPerDay = useMemo(() => {
@@ -332,7 +334,17 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
             </TableHeader>
             <TableBody>
               {tableData.map((member, index) => (
-                <TableRow key={index} className="h-[35px] max-h-[35px]">
+                <TableRow 
+                  key={index} 
+                  className="h-[35px] max-h-[35px] cursor-pointer hover:bg-slate-50 transition-colors" 
+                  onClick={() => {
+                    setDrillDownModal({
+                      isOpen: true,
+                      data: member,
+                      title: `${member.memberName} - ${tabType === 'multiple-day' ? 'Multiple Cancellations' : 'Multiple Check-ins'} on ${new Date(member.date).toLocaleDateString()}`
+                    });
+                  }}
+                >
                   <TableCell className="font-medium h-[35px] py-2">
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 bg-gradient-to-r from-red-500 to-pink-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
@@ -420,7 +432,17 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
             </TableHeader>
             <TableBody>
               {paginatedData.map((classType, index) => (
-                <TableRow key={index} className="h-[35px] max-h-[35px]">
+                <TableRow 
+                  key={index} 
+                  className="h-[35px] max-h-[35px] cursor-pointer hover:bg-slate-50 transition-colors"
+                  onClick={() => {
+                    setDrillDownModal({
+                      isOpen: true,
+                      data: classType,
+                      title: `${classType.className} - Class Cancellations Analysis`
+                    });
+                  }}
+                >
                   <TableCell className="font-medium h-[35px] py-2">
                     <span className="truncate max-w-[150px] block">{classType.className}</span>
                   </TableCell>
@@ -481,7 +503,17 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
             </TableHeader>
             <TableBody>
               {paginatedData.map((membership, index) => (
-                <TableRow key={index} className="h-[35px] max-h-[35px]">
+                <TableRow 
+                  key={index} 
+                  className="h-[35px] max-h-[35px] cursor-pointer hover:bg-slate-50 transition-colors"
+                  onClick={() => {
+                    setDrillDownModal({
+                      isOpen: true,
+                      data: membership,
+                      title: `${membership.membershipType} - Membership Cancellations Analysis`
+                    });
+                  }}
+                >
                   <TableCell className="font-medium h-[35px] py-2">
                     <span className="truncate max-w-[200px] block">{membership.membershipType}</span>
                   </TableCell>
@@ -587,7 +619,17 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
               </TableHeader>
               <TableBody>
                 {paginatedTrainerData.map((trainer, index) => (
-                  <TableRow key={index} className="h-[35px] max-h-[35px]">
+                  <TableRow 
+                    key={index} 
+                    className="h-[35px] max-h-[35px] cursor-pointer hover:bg-slate-50 transition-colors"
+                    onClick={() => {
+                      setDrillDownModal({
+                        isOpen: true,
+                        data: trainer,
+                        title: `${trainer.trainerName} - Trainer Cancellations Analysis`
+                      });
+                    }}
+                  >
                     <TableCell className="font-medium h-[35px] py-2">
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
@@ -716,7 +758,17 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
               </TableHeader>
               <TableBody>
                 {paginatedLocationData.map((location, index) => (
-                  <TableRow key={index} className="h-[35px] max-h-[35px]">
+                  <TableRow 
+                    key={index} 
+                    className="h-[35px] max-h-[35px] cursor-pointer hover:bg-slate-50 transition-colors"
+                    onClick={() => {
+                      setDrillDownModal({
+                        isOpen: true,
+                        data: location,
+                        title: `${location.locationName} - Location Cancellations Analysis`
+                      });
+                    }}
+                  >
                     <TableCell className="font-medium h-[35px] py-2">
                       <div className="flex items-center gap-2">
                         <MapPin className="w-4 h-4 text-indigo-600" />
@@ -818,6 +870,14 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
           </TabsContent>
         </Tabs>
       </CardContent>
+
+      {/* Drill Down Modal */}
+      <LateCancellationsDrillDownModal
+        isOpen={drillDownModal.isOpen}
+        onClose={() => setDrillDownModal({ isOpen: false, data: null, title: '' })}
+        data={drillDownModal.data}
+        title={drillDownModal.title}
+      />
     </Card>
   );
 };
