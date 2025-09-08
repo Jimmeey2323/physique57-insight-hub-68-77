@@ -380,7 +380,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
               </div>
 
               <SalesAnimatedMetricCards 
-                data={filteredData} 
+                data={allHistoricData} 
                 onMetricClick={handleMetricClick}
               />
 

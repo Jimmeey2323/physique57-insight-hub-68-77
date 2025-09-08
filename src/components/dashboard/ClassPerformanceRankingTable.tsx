@@ -24,6 +24,7 @@ interface GroupedClassData {
   totalRevenue: number;
   totalCheckIns: number;
   totalCapacity: number;
+  totalLateCancellations: number;
   sessionCount: number;
 }
 
@@ -56,6 +57,7 @@ export const ClassPerformanceRankingTable: React.FC<ClassPerformanceRankingTable
     const totalCheckIns = sessions.reduce((sum, s) => sum + s.checkedInCount, 0);
     const totalRevenue = sessions.reduce((sum, s) => sum + (s.revenue || s.totalPaid || 0), 0);
     const totalCapacity = sessions.reduce((sum, s) => sum + s.capacity, 0);
+    const totalLateCancellations = sessions.reduce((sum, s) => sum + (s.lateCancelledCount || 0), 0);
     const avgCheckIns = totalCheckIns / sessions.length;
     const fillPercentage = totalCapacity > 0 ? (totalCheckIns / totalCapacity) * 100 : 0;
 
@@ -72,7 +74,8 @@ export const ClassPerformanceRankingTable: React.FC<ClassPerformanceRankingTable
       fillPercentage,
       totalRevenue,
       totalCheckIns,
-      totalCapacity
+      totalCapacity,
+      totalLateCancellations
     };
   });
 
@@ -101,7 +104,9 @@ export const ClassPerformanceRankingTable: React.FC<ClassPerformanceRankingTable
                   <TableHead className="text-white font-bold">Location</TableHead>
                   <TableHead className="text-white font-bold">Sessions</TableHead>
                   <TableHead className="text-white font-bold">Avg Check-ins</TableHead>
-                  <TableHead className="text-white font-bold">Fill %</TableHead>
+                  <TableHead className="text-white font-bold">Fill Rate</TableHead>
+                  <TableHead className="text-white font-bold">Total Attendance</TableHead>
+                  <TableHead className="text-white font-bold">Late Cancelled</TableHead>
                   <TableHead className="text-white font-bold">Revenue</TableHead>
                   <TableHead className="text-white font-bold">Actions</TableHead>
                 </TableRow>
@@ -150,6 +155,14 @@ export const ClassPerformanceRankingTable: React.FC<ClassPerformanceRankingTable
                     <TableCell className="text-center">
                       <Badge variant={classData.fillPercentage >= 80 ? 'default' : classData.fillPercentage >= 60 ? 'secondary' : 'destructive'}>
                         {classData.fillPercentage.toFixed(1)}%
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-center font-semibold">
+                      {classData.totalCheckIns.toLocaleString()}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant={classData.totalLateCancellations > 10 ? 'destructive' : classData.totalLateCancellations > 5 ? 'secondary' : 'default'}>
+                        {classData.totalLateCancellations}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right font-semibold">

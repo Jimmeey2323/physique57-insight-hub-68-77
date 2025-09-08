@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLateCancellationsData } from '@/hooks/useLateCancellationsData';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
@@ -9,6 +9,7 @@ import { EnhancedLateCancellationsTopBottomLists } from '@/components/dashboard/
 import { EnhancedLateCancellationsDataTables } from '@/components/dashboard/EnhancedLateCancellationsDataTables';
 import { EnhancedLateCancellationsFilterSection } from '@/components/dashboard/EnhancedLateCancellationsFilterSection';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Home, XCircle } from 'lucide-react';
 import { Footer } from '@/components/ui/footer';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
@@ -18,8 +19,10 @@ const LateCancellations = () => {
   const { isLoading, setLoading } = useGlobalLoading();
   const navigate = useNavigate();
   
+  // Location tabs state
+  const [activeLocation, setActiveLocation] = useState('all');
+  
   // Enhanced filter states
-  const [selectedLocation, setSelectedLocation] = useState('all');
   const [selectedTimeframe, setSelectedTimeframe] = useState('all');
   const [selectedTrainer, setSelectedTrainer] = useState('all');
   const [selectedClass, setSelectedClass] = useState('all');
@@ -27,21 +30,36 @@ const LateCancellations = () => {
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('all');
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
   
-  // Get unique locations for filter
-  const locations = React.useMemo(() => {
+  // Get unique locations for tabs
+  const locations = useMemo(() => {
     if (!Array.isArray(lateCancellationsData)) return [];
-    return Array.from(new Set(lateCancellationsData.map(item => item?.location).filter(Boolean)));
+    const uniqueLocations = Array.from(new Set(lateCancellationsData.map(item => item?.location).filter(Boolean)));
+    return [
+      { id: 'all', name: 'All Locations' },
+      { id: 'kwality', name: 'Kwality House' },
+      { id: 'supreme', name: 'Supreme HQ' },
+      { id: 'kenkere', name: 'Kenkere House' }
+    ].filter(loc => loc.id === 'all' || uniqueLocations.some(ul => 
+      loc.id === 'kwality' ? ul.includes('Kwality') :
+      loc.id === 'supreme' ? ul.includes('Supreme') :
+      loc.id === 'kenkere' ? ul.includes('Kenkere') : false
+    ));
   }, [lateCancellationsData]);
   
   // Enhanced filter data based on all selected filters
-  const filteredData = React.useMemo(() => {
+  const filteredData = useMemo(() => {
     if (!Array.isArray(lateCancellationsData)) return [];
     
     let filtered = lateCancellationsData;
     
-    // Location filter
-    if (selectedLocation !== 'all') {
-      filtered = filtered.filter(item => item?.location === selectedLocation);
+    // Location tab filter
+    if (activeLocation !== 'all') {
+      filtered = filtered.filter(item => {
+        const location = item?.location || '';
+        return activeLocation === 'kwality' ? location.includes('Kwality') :
+               activeLocation === 'supreme' ? location.includes('Supreme') :
+               activeLocation === 'kenkere' ? location.includes('Kenkere') : true;
+      });
     }
     
     // Trainer filter
@@ -126,11 +144,10 @@ const LateCancellations = () => {
     }
     
     return filtered;
-  }, [lateCancellationsData, selectedLocation, selectedTimeframe, selectedTrainer, selectedClass, selectedProduct, selectedTimeSlot, dateRange]);
+  }, [lateCancellationsData, activeLocation, selectedTimeframe, selectedTrainer, selectedClass, selectedProduct, selectedTimeSlot, dateRange]);
 
   // Clear all filters function
   const clearAllFilters = () => {
-    setSelectedLocation('all');
     setSelectedTimeframe('all');
     setSelectedTrainer('all');
     setSelectedClass('all');
@@ -225,39 +242,60 @@ const LateCancellations = () => {
       {/* Main Content */}
       <div className="relative">
         <div className="container mx-auto px-6 py-8">
-          <div className="space-y-8">
-            {/* Enhanced Filter Section */}
-            <EnhancedLateCancellationsFilterSection
-              selectedLocation={selectedLocation}
-              onLocationChange={setSelectedLocation}
-              selectedTimeframe={selectedTimeframe}
-              onTimeframeChange={setSelectedTimeframe}
-              selectedTrainer={selectedTrainer}
-              onTrainerChange={setSelectedTrainer}
-              selectedClass={selectedClass}
-              onClassChange={setSelectedClass}
-              selectedProduct={selectedProduct}
-              onProductChange={setSelectedProduct}
-              selectedTimeSlot={selectedTimeSlot}
-              onTimeSlotChange={setSelectedTimeSlot}
-              dateRange={dateRange}
-              onDateRangeChange={setDateRange}
-              data={lateCancellationsData}
-              onClearFilters={clearAllFilters}
-            />
-            
-            {/* Metric Cards */}
-            <LateCancellationsMetricCards data={filteredData} />
-            
-            {/* Interactive Charts */}
-            <LateCancellationsInteractiveCharts data={filteredData} />
-            
-            {/* Enhanced Top/Bottom Lists (Side by Side) */}
-            <EnhancedLateCancellationsTopBottomLists data={filteredData} />
-            
-            {/* Enhanced Detailed Data Tables with Pagination */}
-            <EnhancedLateCancellationsDataTables data={filteredData} />
-          </div>
+          {/* Location Tabs */}
+          <Tabs value={activeLocation} onValueChange={setActiveLocation} className="w-full mb-8">
+            <div className="flex justify-center mb-8">
+              <TabsList className="bg-white/90 backdrop-blur-sm p-2 rounded-2xl shadow-xl border-0 grid w-full max-w-4xl min-h-16 overflow-hidden" style={{ gridTemplateColumns: `repeat(${locations.length}, 1fr)` }}>
+                {locations.map(location => (
+                  <TabsTrigger 
+                    key={location.id} 
+                    value={location.id} 
+                    className="relative px-4 py-3 font-semibold text-gray-800 transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-600 data-[state=active]:to-pink-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50 text-sm rounded-xl"
+                  >
+                    {location.name}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
+
+            {locations.map(location => (
+              <TabsContent key={location.id} value={location.id} className="space-y-8">
+                <div className="space-y-8">
+                  {/* Enhanced Filter Section */}
+                  <EnhancedLateCancellationsFilterSection
+                    selectedLocation="all"
+                    onLocationChange={() => {}}
+                    selectedTimeframe={selectedTimeframe}
+                    onTimeframeChange={setSelectedTimeframe}
+                    selectedTrainer={selectedTrainer}
+                    onTrainerChange={setSelectedTrainer}
+                    selectedClass={selectedClass}
+                    onClassChange={setSelectedClass}
+                    selectedProduct={selectedProduct}
+                    onProductChange={setSelectedProduct}
+                    selectedTimeSlot={selectedTimeSlot}
+                    onTimeSlotChange={setSelectedTimeSlot}
+                    dateRange={dateRange}
+                    onDateRangeChange={setDateRange}
+                    data={lateCancellationsData}
+                    onClearFilters={clearAllFilters}
+                  />
+                  
+                  {/* Metric Cards */}
+                  <LateCancellationsMetricCards data={filteredData} />
+                  
+                  {/* Interactive Charts */}
+                  <LateCancellationsInteractiveCharts data={filteredData} />
+                  
+                  {/* Enhanced Top/Bottom Lists (Side by Side) */}
+                  <EnhancedLateCancellationsTopBottomLists data={filteredData} />
+                  
+                  {/* Enhanced Detailed Data Tables with Pagination */}
+                  <EnhancedLateCancellationsDataTables data={filteredData} />
+                </div>
+              </TabsContent>
+            ))}
+          </Tabs>
         </div>
       </div>
       

@@ -332,7 +332,14 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
             </TableHeader>
             <TableBody>
               {tableData.map((member, index) => (
-                <TableRow key={index} className="h-[35px] max-h-[35px]">
+                <TableRow 
+                  key={index} 
+                  className="h-[35px] max-h-[35px] hover:bg-gray-50 cursor-pointer transition-colors"
+                  onClick={() => {
+                    // Drill-down functionality - show member details modal
+                    console.log('Member clicked:', member);
+                  }}
+                >
                   <TableCell className="font-medium h-[35px] py-2">
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 bg-gradient-to-r from-red-500 to-pink-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
@@ -419,11 +426,18 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedData.map((classType, index) => (
-                <TableRow key={index} className="h-[35px] max-h-[35px]">
-                  <TableCell className="font-medium h-[35px] py-2">
-                    <span className="truncate max-w-[150px] block">{classType.className}</span>
-                  </TableCell>
+            {paginatedData.map((classType, index) => (
+              <TableRow 
+                key={index} 
+                className="h-[35px] max-h-[35px] hover:bg-gray-50 cursor-pointer transition-colors"
+                onClick={() => {
+                  // Drill-down functionality - show class details
+                  console.log('Class type clicked:', classType);
+                }}
+              >
+                <TableCell className="font-medium h-[35px] py-2">
+                  <span className="truncate max-w-[150px] block">{classType.className}</span>
+                </TableCell>
                   <TableCell className="h-[35px] py-2">
                     <Badge variant="secondary">{classType.category}</Badge>
                   </TableCell>
@@ -481,7 +495,14 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
             </TableHeader>
             <TableBody>
               {paginatedData.map((membership, index) => (
-                <TableRow key={index} className="h-[35px] max-h-[35px]">
+                <TableRow 
+                  key={index} 
+                  className="h-[35px] max-h-[35px] hover:bg-gray-50 cursor-pointer transition-colors"
+                  onClick={() => {
+                    // Drill-down functionality - show membership details
+                    console.log('Membership type clicked:', membership);
+                  }}
+                >
                   <TableCell className="font-medium h-[35px] py-2">
                     <span className="truncate max-w-[200px] block">{membership.membershipType}</span>
                   </TableCell>
