@@ -50,11 +50,15 @@ export const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalPr
     const transactionData = data.filteredTransactionData || data.rawData || data.transactionData || [];
     
     console.log(`Processing drill-down modal with ${transactionData.length} transactions`);
+    console.log('Data has dynamic flags:', data.isDynamic, data.calculatedFromFiltered);
     
-    // Basic metrics
-    const totalRevenue = transactionData.reduce((sum: number, item: any) => sum + (item.paymentValue || 0), 0);
-    const totalTransactions = transactionData.length;
-    const uniqueCustomers = new Set(transactionData.map((item: any) => item.memberId || item.customerEmail)).size;
+    // Use dynamic metrics if available (calculated from filtered data), otherwise calculate fresh
+    const totalRevenue = data.isDynamic && data.totalRevenue !== undefined ? data.totalRevenue : 
+                        transactionData.reduce((sum: number, item: any) => sum + (item.paymentValue || 0), 0);
+    const totalTransactions = data.isDynamic && data.totalTransactions !== undefined ? data.totalTransactions : 
+                             transactionData.length;
+    const uniqueCustomers = data.isDynamic && data.totalCustomers !== undefined ? data.totalCustomers : 
+                           new Set(transactionData.map((item: any) => item.memberId || item.customerEmail)).size;
     const avgTransactionValue = totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
     const uniqueProducts = new Set(transactionData.map((item: any) => item.cleanedProduct || item.paymentItem)).size;
 

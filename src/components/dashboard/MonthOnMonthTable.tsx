@@ -237,23 +237,42 @@ export const MonthOnMonthTable: React.FC<MonthOnMonthTableProps> = ({
     setLocalCollapsedGroups(newCollapsed);
   };
   const handleRowClickWithDrillDown = (productData: any) => {
+    console.log('Product row clicked with data:', productData);
+    console.log('Raw data length:', productData.rawData?.length);
+    
+    // Calculate dynamic metrics from the specific product's raw data
+    const specificData = productData.rawData || [];
+    const dynamicRevenue = specificData.reduce((sum: any, item: any) => sum + (item.paymentValue || 0), 0);
+    const dynamicTransactions = specificData.length;
+    const dynamicCustomers = new Set(specificData.map((item: any) => item.memberId || item.customerEmail)).size;
+    
     // Enhanced drill-down data with comprehensive analytics
     const drillDownData = {
       ...productData,
       title: productData.product,
+      name: productData.product,
       type: 'product',
-      grossRevenue: productData.metricValue,
-      totalValue: productData.metricValue,
-      totalCurrent: productData.metricValue,
-      metricValue: productData.metricValue,
-      transactions: productData.rawData?.length || 0,
-      totalTransactions: productData.rawData?.length || 0,
-      uniqueMembers: productData.rawData ? new Set(productData.rawData.map((item: any) => item.memberId)).size : 0,
-      totalCustomers: productData.rawData ? new Set(productData.rawData.map((item: any) => item.memberId)).size : 0,
+      // Override static values with dynamic calculations
+      totalRevenue: dynamicRevenue,
+      grossRevenue: dynamicRevenue,
+      netRevenue: dynamicRevenue,
+      totalValue: dynamicRevenue,
+      totalCurrent: dynamicRevenue,
+      metricValue: dynamicRevenue,
+      transactions: dynamicTransactions,
+      totalTransactions: dynamicTransactions,
+      uniqueMembers: dynamicCustomers,
+      totalCustomers: dynamicCustomers,
       months: productData.monthlyValues,
       monthlyValues: productData.monthlyValues,
-      rawData: productData.rawData || []
+      rawData: specificData,
+      filteredTransactionData: specificData,
+      // Add dynamic flags
+      isDynamic: true,
+      calculatedFromFiltered: true
     };
+    
+    console.log(`Drill-down for ${productData.product}: ${dynamicTransactions} transactions, ${dynamicRevenue} revenue`);
     onRowClick(drillDownData);
   };
   return <Card className="bg-gradient-to-br from-blue-50 via-blue-100 to-blue-200 border-0 shadow-2xl rounded-2xl">

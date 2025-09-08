@@ -273,11 +273,24 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
       ...rowData,
       rawData: specificFilteredData,
       filteredTransactionData: specificFilteredData,
-      // Calculate specific metrics for this filtered data
+      // Calculate specific metrics for this filtered data and override any static values
+      totalRevenue: specificFilteredData.reduce((sum, item) => sum + (item.paymentValue || 0), 0),
+      grossRevenue: specificFilteredData.reduce((sum, item) => sum + (item.paymentValue || 0), 0),
+      netRevenue: specificFilteredData.reduce((sum, item) => sum + (item.paymentValue || 0), 0),
+      totalValue: specificFilteredData.reduce((sum, item) => sum + (item.paymentValue || 0), 0),
+      totalCurrent: specificFilteredData.reduce((sum, item) => sum + (item.paymentValue || 0), 0),
+      metricValue: specificFilteredData.reduce((sum, item) => sum + (item.paymentValue || 0), 0),
+      transactions: specificFilteredData.length,
+      totalTransactions: specificFilteredData.length,
+      uniqueMembers: new Set(specificFilteredData.map(item => item.memberId || item.customerEmail)).size,
+      totalCustomers: new Set(specificFilteredData.map(item => item.memberId || item.customerEmail)).size,
       specificRevenue: specificFilteredData.reduce((sum, item) => sum + (item.paymentValue || 0), 0),
       specificTransactions: specificFilteredData.length,
       specificCustomers: new Set(specificFilteredData.map(item => item.memberId || item.customerEmail)).size,
-      specificProducts: new Set(specificFilteredData.map(item => item.cleanedProduct || item.paymentItem)).size
+      specificProducts: new Set(specificFilteredData.map(item => item.cleanedProduct || item.paymentItem)).size,
+      // Add dynamic calculation flags to ensure modal uses fresh data
+      isDynamic: true,
+      calculatedFromFiltered: true
     };
     
     setDrillDownData(enhancedData);
@@ -287,30 +300,39 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
   const handleMetricClick = (metricData: any) => {
     console.log('Metric clicked with data:', metricData);
     
-    // For metric clicks, provide more specific data if available
-    let specificData = filteredData;
+    // For metric clicks, use the filtered data to ensure responsiveness to filters
+    const specificData = filteredData;
     
-    // If the metric has specific filtering criteria, apply it
-    if (metricData.rawData && metricData.rawData.length > 0) {
-      specificData = metricData.rawData;
-    } else if (metricData.filteredData && metricData.filteredData.length > 0) {
-      specificData = metricData.filteredData;
-    }
+    // Calculate fresh metrics from the current filtered data
+    const dynamicRevenue = specificData.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
+    const dynamicTransactions = specificData.length;
+    const dynamicCustomers = new Set(specificData.map(item => item.memberId || item.customerEmail)).size;
     
-    // Enhance metric data with specific sales data
+    // Enhance metric data with dynamic calculations
     const enhancedData = {
       ...metricData,
       rawData: specificData,
       filteredTransactionData: specificData,
-      grossRevenue: specificData.reduce((sum, item) => sum + (item.paymentValue || 0), 0),
-      transactions: specificData.length,
-      uniqueMembers: new Set(specificData.map(item => item.memberId || item.customerEmail)).size,
-      specificRevenue: specificData.reduce((sum, item) => sum + (item.paymentValue || 0), 0),
-      specificTransactions: specificData.length,
-      specificCustomers: new Set(specificData.map(item => item.memberId || item.customerEmail)).size
+      // Override with dynamic values
+      totalRevenue: dynamicRevenue,
+      grossRevenue: dynamicRevenue,
+      netRevenue: dynamicRevenue,
+      totalValue: dynamicRevenue,
+      totalCurrent: dynamicRevenue,
+      metricValue: dynamicRevenue,
+      transactions: dynamicTransactions,
+      totalTransactions: dynamicTransactions,
+      uniqueMembers: dynamicCustomers,
+      totalCustomers: dynamicCustomers,
+      specificRevenue: dynamicRevenue,
+      specificTransactions: dynamicTransactions,
+      specificCustomers: dynamicCustomers,
+      // Add flags to indicate this is dynamically calculated
+      isDynamic: true,
+      calculatedFromFiltered: true
     };
     
-    console.log(`Metric drill-down with ${specificData.length} specific transactions`);
+    console.log(`Metric drill-down with ${specificData.length} filtered transactions, revenue: ${dynamicRevenue}`);
     setDrillDownData(enhancedData);
     setDrillDownType('metric');
   };
@@ -380,7 +402,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
               </div>
 
               <SalesAnimatedMetricCards 
-                data={allHistoricData} 
+                data={filteredData} 
                 onMetricClick={handleMetricClick}
               />
 

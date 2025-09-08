@@ -118,23 +118,37 @@ export const SalesAnimatedMetricCards: React.FC<SalesAnimatedMetricCardsProps> =
 
   const handleMetricClick = (metric: any) => {
     if (onMetricClick) {
+      // Calculate fresh metrics from current data for dynamic drill-down
+      const dynamicRevenue = data.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
+      const dynamicTransactions = data.length;
+      const dynamicCustomers = new Set(data.map(item => item.memberId || item.customerEmail)).size;
+      
       const drillDownData = {
         title: metric.title,
         name: metric.title,
-        metricValue: metric.grossRevenue,
-        grossRevenue: metric.grossRevenue,
-        totalValue: metric.grossRevenue,
-        totalCurrent: metric.grossRevenue,
-        transactions: metric.transactions,
-        totalTransactions: metric.transactions,
-        uniqueMembers: metric.uniqueMembers,
-        totalCustomers: metric.uniqueMembers,
-        totalChange: 12.5, // Mock change for demo
-        rawData: metric.rawData,
         type: 'metric',
+        // Use dynamic calculations from current filtered data
+        totalRevenue: dynamicRevenue,
+        grossRevenue: dynamicRevenue,
+        netRevenue: dynamicRevenue,
+        totalValue: dynamicRevenue,
+        totalCurrent: dynamicRevenue,
+        metricValue: dynamicRevenue,
+        transactions: dynamicTransactions,
+        totalTransactions: dynamicTransactions,
+        uniqueMembers: dynamicCustomers,
+        totalCustomers: dynamicCustomers,
+        totalChange: 12.5, // Mock change for demo
+        rawData: data,
+        filteredTransactionData: data,
         months: {},
-        monthlyValues: {}
+        monthlyValues: {},
+        // Add dynamic flags
+        isDynamic: true,
+        calculatedFromFiltered: true
       };
+      
+      console.log(`Metric ${metric.title} clicked: ${dynamicTransactions} transactions, ${dynamicRevenue} revenue`);
       onMetricClick(drillDownData);
     }
   };

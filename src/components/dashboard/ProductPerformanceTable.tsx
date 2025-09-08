@@ -230,7 +230,36 @@ export const ProductPerformanceTable: React.FC<ProductPerformanceTableProps> = (
               </tr>
             </thead>
             <tbody>
-              {processedData.map((item, index) => <tr key={item.product} onClick={() => onRowClick(item)} className="hover:bg-gray-50 cursor-pointer border-b border-gray-100 transition-colors duration-200">
+              {processedData.map((item, index) => <tr key={item.product} onClick={() => {
+                // Calculate dynamic metrics for drill-down
+                const specificData = item.rawData || [];
+                const dynamicRevenue = specificData.reduce((sum: any, transaction: any) => sum + (transaction.paymentValue || 0), 0);
+                const dynamicTransactions = specificData.length;
+                const dynamicCustomers = new Set(specificData.map((transaction: any) => transaction.memberId || transaction.customerEmail)).size;
+                
+                const enhancedItem = {
+                  ...item,
+                  // Override with dynamic calculations
+                  totalRevenue: dynamicRevenue,
+                  grossRevenue: dynamicRevenue,
+                  netRevenue: dynamicRevenue,
+                  totalValue: dynamicRevenue,
+                  totalCurrent: dynamicRevenue,
+                  metricValue: dynamicRevenue,
+                  transactions: dynamicTransactions,
+                  totalTransactions: dynamicTransactions,
+                  uniqueMembers: dynamicCustomers,
+                  totalCustomers: dynamicCustomers,
+                  rawData: specificData,
+                  filteredTransactionData: specificData,
+                  // Add dynamic flags
+                  isDynamic: true,
+                  calculatedFromFiltered: true
+                };
+                
+                console.log(`Product ${item.product} drill-down: ${dynamicTransactions} transactions, ${dynamicRevenue} revenue`);
+                onRowClick(enhancedItem);
+              }} className="hover:bg-gray-50 cursor-pointer border-b border-gray-100 transition-colors duration-200">
                   <td className="px-6 py-3 text-sm font-medium text-gray-900 sticky left-0 bg-white border-r border-gray-200 min-w-60">
                     <div className="flex items-center gap-4 min-w-60">
                       <span className="font-bold text-slate-700">#{index + 1}</span>
