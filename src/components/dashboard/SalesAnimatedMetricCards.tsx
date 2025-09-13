@@ -90,103 +90,100 @@ export const SalesAnimatedMetricCards: React.FC<SalesAnimatedMetricCardsProps> =
           <Card 
             key={index} 
             className={cn(
-              "bg-white shadow-xl border-0 overflow-hidden hover:shadow-2xl transition-all duration-500 group cursor-pointer",
-              "hover:scale-105 transform"
+              "bg-white/95 backdrop-blur-sm shadow-2xl border border-white/20 overflow-hidden hover:shadow-3xl transition-all duration-700 group cursor-pointer",
+              "hover:scale-[1.02] hover:-translate-y-1 transform-gpu"
             )}
             onClick={() => handleMetricClick(metric)}
             style={{ animationDelay: `${index * 150}ms` }}
           >
             <CardContent className="p-0">
-              <div className={`bg-gradient-to-r ${
-                metric.color === 'blue' ? 'from-blue-500 to-indigo-600' :
-                metric.color === 'green' ? 'from-green-500 to-teal-600' :
-                metric.color === 'purple' ? 'from-purple-500 to-violet-600' :
-                metric.color === 'orange' ? 'from-orange-500 to-red-600' :
-                metric.color === 'cyan' ? 'from-cyan-500 to-blue-600' :
-                metric.color === 'pink' ? 'from-pink-500 to-rose-600' :
-                metric.color === 'red' ? 'from-red-500 to-rose-600' :
-                'from-amber-500 to-orange-600'
+              <div className={`bg-gradient-to-br ${
+                metric.color === 'blue' ? 'from-blue-500 via-blue-600 to-indigo-700' :
+                metric.color === 'green' ? 'from-green-500 via-green-600 to-teal-700' :
+                metric.color === 'purple' ? 'from-purple-500 via-purple-600 to-violet-700' :
+                metric.color === 'orange' ? 'from-orange-500 via-orange-600 to-red-700' :
+                metric.color === 'cyan' ? 'from-cyan-500 via-cyan-600 to-blue-700' :
+                metric.color === 'pink' ? 'from-pink-500 via-pink-600 to-rose-700' :
+                metric.color === 'red' ? 'from-red-500 via-red-600 to-rose-700' :
+                'from-amber-500 via-amber-600 to-orange-700'
               } p-6 text-white relative overflow-hidden`}>
                 
-                {/* Background decorative icon */}
-                <div className="absolute top-0 right-0 w-20 h-20 transform translate-x-8 -translate-y-8 opacity-20">
-                  <IconComponent className="w-20 h-20" />
+                {/* Animated gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                
+                {/* Background decorative elements */}
+                <div className="absolute top-0 right-0 w-24 h-24 transform translate-x-10 -translate-y-10 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+                  <IconComponent className="w-24 h-24" />
+                </div>
+                <div className="absolute bottom-0 left-0 w-16 h-16 transform -translate-x-8 translate-y-8 opacity-5">
+                  <IconComponent className="w-16 h-16" />
                 </div>
                 
                 <div className="relative z-10">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-white/20 rounded-lg">
-                      <IconComponent className="w-6 h-6" />
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl shadow-lg group-hover:bg-white/30 transition-colors duration-300">
+                        <IconComponent className="w-5 h-5" />
+                      </div>
+                      <h3 className="font-semibold text-sm tracking-wide">{metric.title}</h3>
                     </div>
-                    <h3 className="font-semibold text-sm">{metric.title}</h3>
-                  </div>
-                  
-                  <div className="space-y-3">
                     
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1">
-                        <p className="text-3xl font-bold mb-1">{metric.value}</p>
+                    {/* Growth Indicator Badge - Top Right */}
+                    <div className={cn(
+                      "flex flex-col items-center gap-1.5 px-3 py-2 rounded-full backdrop-blur-sm border transition-all duration-300 shrink-0 group",
+                      "bg-white/0 hover:bg-white/95 border-white/30 hover:border-white/50",
+                      "shadow-lg hover:shadow-xl transform hover:scale-105"
+                    )}>
+                      {/* Growth Percentage and Direction */}
+                      <div className={cn(
+                        "flex items-center gap-1.5 transition-colors duration-300",
+                        isPositive ? "text-green-200 group-hover:text-green-600" : "text-red-200 group-hover:text-red-600"
+                      )}>
+                        {isPositive ? (
+                          <ArrowUpRight className="w-4 h-4" />
+                        ) : (
+                          <ArrowDownRight className="w-4 h-4" />
+                        )}
+                        <span className="font-bold text-sm">
+                          {isPositive ? '+' : ''}{metric.change.toFixed(1)}%
+                        </span>
                       </div>
                       
-                      {/* Growth Indicator - Positioned on right */}
-                      <div className={cn(
-                        "flex flex-col items-end gap-3 px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-all duration-300 shrink-0",
-                        metric.changeDetails?.isSignificant ? "shadow-lg" : "shadow-sm",
-                        isPositive ? 
-                          "bg-gradient-to-r from-green-50 to-emerald-50 text-green-800 border-green-200" : 
-                          "bg-gradient-to-r from-red-50 to-rose-50 text-red-700 border-red-200"
-                      )}>
-                        {/* Growth Percentage and Direction */}
-                        <div className="flex items-center gap-1">
-                          {isPositive ? (
-                            <ArrowUpRight className="w-3 h-3" />
-                          ) : (
-                            <ArrowDownRight className="w-3 h-3" />
-                          )}
-                          <span className="font-extrabold text-xs">
-                            {isPositive ? '+' : ''}{metric.change.toFixed(1)}%
-                          </span>
-                        </div>
-                        
-                        {/* Significance Badge */}
-                        {metric.changeDetails?.isSignificant && (
-                          <Badge 
-                            variant="secondary" 
-                            className={cn(
-                              "text-xs px-1.5 py-0.5 font-bold border-0",
-                              metric.changeDetails.trend === 'strong' ? "bg-white/90 text-slate-700" :
-                              "bg-white/70 text-slate-600"
-                            )}
-                          >
-                            {metric.changeDetails.trend.toUpperCase()}
-                          </Badge>
-                        )}
-                        
-                        {/* Trend Strength Indicator */}
+                      {/* Significance Badge */}
+                      {metric.changeDetails?.isSignificant && (
                         <div className={cn(
-                          "w-1.5 h-1.5 rounded-full animate-pulse",
-                          metric.changeDetails?.trend === 'strong' ? "bg-current" :
-                          metric.changeDetails?.trend === 'moderate' ? "bg-current opacity-70" :
-                          "bg-current opacity-40"
-                        )} />
-                      </div>
-                    </div>
-                    
-                    {/* Previous Value Comparison - Now inside the card */}
-                    <div className="pt-2 border-t border-white/20">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <div className="text-xs text-white/60 font-medium">Previous Period</div>
-                          <div className="text-sm font-bold text-white/90">{metric.previousValue}</div>
+                          "text-xs px-2 py-0.5 rounded-full font-bold transition-colors duration-300",
+                          "text-white/80 group-hover:text-slate-700",
+                          metric.changeDetails.trend === 'strong' ? "bg-white/20 group-hover:bg-white/90" :
+                          "bg-white/10 group-hover:bg-white/70"
+                        )}>
+                          {metric.changeDetails.trend.toUpperCase()}
                         </div>
-                        <div className="text-right">
-                          <div className="text-xs text-white/60 font-medium">Change</div>
-                          <div className={cn(
-                            "text-sm font-semibold",
-                            isPositive ? "text-green-200" : "text-red-200"
-                          )}>
-                            {isPositive ? '+' : ''}{formatCurrency(Math.abs(metric.comparison.difference))}
-                          </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Main Value */}
+                  <div className="mb-4">
+                    <p className="text-4xl font-bold mb-2 tracking-tight group-hover:text-white/95 transition-colors duration-300">
+                      {metric.value}
+                    </p>
+                  </div>
+                  
+                  {/* Previous Value Comparison */}
+                  <div className="pt-3 border-t border-white/20">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <div className="text-xs text-white/70 font-medium uppercase tracking-wider">Previous</div>
+                        <div className="text-sm font-semibold text-white/90">{metric.previousValue}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs text-white/70 font-medium uppercase tracking-wider">Difference</div>
+                        <div className={cn(
+                          "text-sm font-bold",
+                          isPositive ? "text-green-200" : "text-red-200"
+                        )}>
+                          {isPositive ? '+' : ''}{formatCurrency(Math.abs(metric.comparison.difference))}
                         </div>
                       </div>
                     </div>
@@ -194,9 +191,9 @@ export const SalesAnimatedMetricCards: React.FC<SalesAnimatedMetricCardsProps> =
                 </div>
               </div>
               
-              {/* Description section */}
-              <div className="p-4 bg-gray-50">
-                <p className="text-sm text-gray-600">{metric.description}</p>
+              {/* Description section with modern styling */}
+              <div className="p-4 bg-gradient-to-r from-slate-50 to-gray-50 border-t border-white/20">
+                <p className="text-sm text-slate-600 leading-relaxed">{metric.description}</p>
               </div>
             </CardContent>
           </Card>
