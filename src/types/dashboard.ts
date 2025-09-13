@@ -219,7 +219,9 @@ export type YearOnYearMetricType =
   | 'upt'
   | 'vat'
   | 'netRevenue'
-  | 'units';
+  | 'units'
+  | 'discountValue'
+  | 'discountPercentage';
 
 // Data table props interface
 export interface DataTableProps {

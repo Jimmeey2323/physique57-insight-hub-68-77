@@ -57,32 +57,37 @@ export const ProductPerformanceTable: React.FC<ProductPerformanceTableProps> = (
   };
   const getMetricValue = (items: SalesData[], metric: YearOnYearMetricType) => {
     if (!items.length) return 0;
+    const totalRevenue = items.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
+    const totalTransactions = items.length;
+    const uniqueMembers = new Set(items.map(item => item.memberId)).size;
+    const totalUnits = items.length;
+    const totalDiscount = items.reduce((sum, item) => sum + (item.discountAmount || 0), 0);
+    const avgDiscountPercentage = items.length > 0 ? 
+      items.reduce((sum, item) => sum + (item.discountPercentage || 0), 0) / items.length : 0;
+
     switch (metric) {
       case 'revenue':
-        return items.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
+        return totalRevenue;
       case 'transactions':
-        return items.length;
+        return totalTransactions;
       case 'members':
-        return new Set(items.map(item => item.memberId)).size;
+        return uniqueMembers;
       case 'units':
-        return items.length;
+        return totalUnits;
       case 'atv':
-        const totalRevenue = items.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
-        return items.length > 0 ? totalRevenue / items.length : 0;
+        return totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
       case 'auv':
-        const revenue = items.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
-        const units = items.length;
-        return units > 0 ? revenue / units : 0;
+        return totalUnits > 0 ? totalRevenue / totalUnits : 0;
       case 'asv':
-        const totalRev = items.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
-        const uniqueMembers = new Set(items.map(item => item.memberId)).size;
-        return uniqueMembers > 0 ? totalRev / uniqueMembers : 0;
+        return uniqueMembers > 0 ? totalRevenue / uniqueMembers : 0;
       case 'upt':
-        const totalTransactions = items.length;
-        const totalUnits = items.length;
         return totalTransactions > 0 ? totalUnits / totalTransactions : 0;
       case 'vat':
         return items.reduce((sum, item) => sum + (item.paymentVAT || 0), 0);
+      case 'discountValue':
+        return totalDiscount;
+      case 'discountPercentage':
+        return avgDiscountPercentage;
       default:
         return 0;
     }
@@ -91,6 +96,7 @@ export const ProductPerformanceTable: React.FC<ProductPerformanceTableProps> = (
     switch (metric) {
       case 'revenue':
       case 'vat':
+      case 'discountValue':
         return formatCurrency(value);
       case 'atv':
       case 'auv':
@@ -103,6 +109,8 @@ export const ProductPerformanceTable: React.FC<ProductPerformanceTableProps> = (
         return formatNumber(value);
       case 'upt':
         return value.toFixed(1);
+      case 'discountPercentage':
+        return `${value.toFixed(1)}%`;
       // 1 decimal
       default:
         return formatNumber(value);
@@ -218,6 +226,7 @@ export const ProductPerformanceTable: React.FC<ProductPerformanceTableProps> = (
             <thead className="bg-gradient-to-r from-orange-700 to-orange-900 text-white font-semibold text-sm uppercase tracking-wider sticky top-0 z-20">
               <tr className="text-white bg-indigo-900">
                 <th className="text-white font-semibold uppercase tracking-wider px-6 py-3 text-left rounded-tl-lg sticky left-0 z-30 bg-indigo-900">Product</th>
+                <th className="text-white font-semibold text-xs uppercase tracking-wider px-3 py-2 bg-indigo-900 min-w-24">Contribution %</th>
                 {monthlyData.map(({
                 key,
                 display
@@ -266,6 +275,9 @@ export const ProductPerformanceTable: React.FC<ProductPerformanceTableProps> = (
                       <span className="text-zinc-950 font-bold">{item.product}</span>
                     </div>
                   </td>
+                  <td className="px-3 py-3 text-center text-sm text-gray-900 font-mono">
+                    {(item.metricValue / totalsRow.metricValue * 100).toFixed(1)}%
+                  </td>
                   {monthlyData.map(({
                 key,
                 year,
@@ -274,10 +286,13 @@ export const ProductPerformanceTable: React.FC<ProductPerformanceTableProps> = (
               }, monthIndex) => {
                 const current = item.monthlyValues[key] || 0;
                 const previous = monthIndex > 0 ? item.monthlyValues[monthlyData[monthIndex - 1].key] || 0 : 0;
+                const monthTotal = totalsRow.monthlyValues[key] || 0;
+                const contribution = monthTotal > 0 ? (current / monthTotal * 100) : 0;
                 
                 return <td 
                   key={key} 
                   className="px-3 py-3 text-center text-sm text-gray-900 font-mono border-l border-gray-100 hover:bg-blue-50 cursor-pointer transition-colors"
+                  title={`Contribution: ${contribution.toFixed(1)}% of month total`}
                   onClick={(e) => {
                     e.stopPropagation(); // Prevent row click
                     

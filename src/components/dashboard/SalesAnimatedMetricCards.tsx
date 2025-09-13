@@ -122,36 +122,31 @@ export const SalesAnimatedMetricCards: React.FC<SalesAnimatedMetricCardsProps> =
                   </div>
                   
                   <div className="space-y-3">
-                    <p className="text-3xl font-bold">{metric.value}</p>
                     
-                    <div className="flex items-center justify-between">
-                      {/* Growth Indicator */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        <p className="text-3xl font-bold mb-1">{metric.value}</p>
+                      </div>
+                      
+                      {/* Growth Indicator - Positioned on right */}
                       <div className={cn(
-                        "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-all duration-300",
+                        "flex flex-col items-end gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-all duration-300 shrink-0",
                         metric.changeDetails?.isSignificant ? "shadow-lg" : "shadow-sm",
                         isPositive ? 
                           "bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 border-green-200" : 
                           "bg-gradient-to-r from-red-50 to-rose-50 text-red-700 border-red-200"
                       )}>
-                        {/* Trend Strength Indicator */}
-                        <div className={cn(
-                          "w-1.5 h-1.5 rounded-full animate-pulse",
-                          metric.changeDetails?.trend === 'strong' ? "bg-current" :
-                          metric.changeDetails?.trend === 'moderate' ? "bg-current opacity-70" :
-                          "bg-current opacity-40"
-                        )} />
-                        
-                        {/* Direction Icon */}
-                        {isPositive ? (
-                          <ArrowUpRight className="w-3.5 h-3.5" />
-                        ) : (
-                          <ArrowDownRight className="w-3.5 h-3.5" />
-                        )}
-                        
-                        {/* Growth Percentage */}
-                        <span className="font-extrabold">
-                          {isPositive ? '+' : ''}{metric.change.toFixed(1)}%
-                        </span>
+                        {/* Growth Percentage and Direction */}
+                        <div className="flex items-center gap-1">
+                          {isPositive ? (
+                            <ArrowUpRight className="w-3 h-3" />
+                          ) : (
+                            <ArrowDownRight className="w-3 h-3" />
+                          )}
+                          <span className="font-extrabold text-xs">
+                            {isPositive ? '+' : ''}{metric.change.toFixed(1)}%
+                          </span>
+                        </div>
                         
                         {/* Significance Badge */}
                         {metric.changeDetails?.isSignificant && (
@@ -166,6 +161,14 @@ export const SalesAnimatedMetricCards: React.FC<SalesAnimatedMetricCardsProps> =
                             {metric.changeDetails.trend.toUpperCase()}
                           </Badge>
                         )}
+                        
+                        {/* Trend Strength Indicator */}
+                        <div className={cn(
+                          "w-1.5 h-1.5 rounded-full animate-pulse",
+                          metric.changeDetails?.trend === 'strong' ? "bg-current" :
+                          metric.changeDetails?.trend === 'moderate' ? "bg-current opacity-70" :
+                          "bg-current opacity-40"
+                        )} />
                       </div>
                     </div>
                     

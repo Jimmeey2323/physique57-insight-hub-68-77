@@ -62,34 +62,39 @@ export const CategoryPerformanceTable: React.FC<CategoryPerformanceTableProps> =
   };
   const getMetricValue = (items: SalesData[], metric: YearOnYearMetricType) => {
     if (!items.length) return 0;
+    const totalRevenue = items.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
+    const totalTransactions = items.length;
+    const uniqueMembers = new Set(items.map(item => item.memberId)).size;
+    const totalUnits = items.length;
+    const totalDiscount = items.reduce((sum, item) => sum + (item.discountAmount || 0), 0);
+    const avgDiscountPercentage = items.length > 0 ? 
+      items.reduce((sum, item) => sum + (item.discountPercentage || 0), 0) / items.length : 0;
+
     switch (metric) {
       case 'revenue':
-        return items.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
+        return totalRevenue;
       case 'transactions':
-        return items.length;
+        return totalTransactions;
       case 'members':
-        return new Set(items.map(item => item.memberId)).size;
+        return uniqueMembers;
       case 'units':
-        return items.length;
+        return totalUnits;
       case 'atv':
-        const totalRevenue = items.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
-        return items.length > 0 ? totalRevenue / items.length : 0;
+        return totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
       case 'auv':
-        const revenue = items.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
-        const units = items.length;
-        return units > 0 ? revenue / units : 0;
+        return totalUnits > 0 ? totalRevenue / totalUnits : 0;
       case 'asv':
-        const totalRev = items.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
-        const uniqueMembers = new Set(items.map(item => item.memberId)).size;
-        return uniqueMembers > 0 ? totalRev / uniqueMembers : 0;
+        return uniqueMembers > 0 ? totalRevenue / uniqueMembers : 0;
       case 'upt':
-        const totalTransactions = items.length;
-        const totalUnits = items.length;
         return totalTransactions > 0 ? totalUnits / totalTransactions : 0;
       case 'vat':
         return items.reduce((sum, item) => sum + (item.paymentVAT || 0), 0);
       case 'netRevenue':
-        return items.reduce((sum, item) => sum + ((item.paymentValue || 0) - (item.paymentVAT || 0)), 0);
+        return totalRevenue - items.reduce((sum, item) => sum + (item.paymentVAT || 0), 0);
+      case 'discountValue':
+        return totalDiscount;
+      case 'discountPercentage':
+        return avgDiscountPercentage;
       default:
         return 0;
     }
@@ -99,6 +104,7 @@ export const CategoryPerformanceTable: React.FC<CategoryPerformanceTableProps> =
       case 'revenue':
       case 'vat':
       case 'netRevenue':
+      case 'discountValue':
         return formatCurrency(value);
       case 'atv':
       case 'auv':
@@ -111,6 +117,8 @@ export const CategoryPerformanceTable: React.FC<CategoryPerformanceTableProps> =
         return formatNumber(value);
       case 'upt':
         return value.toFixed(1);
+      case 'discountPercentage':
+        return `${value.toFixed(1)}%`;
       // 1 decimal
       default:
         return formatNumber(value);

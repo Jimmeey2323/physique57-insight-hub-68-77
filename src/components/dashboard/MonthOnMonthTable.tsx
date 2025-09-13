@@ -59,6 +59,10 @@ export const MonthOnMonthTable: React.FC<MonthOnMonthTableProps> = ({
     const totalTransactions = items.length;
     const uniqueMembers = new Set(items.map(item => item.memberId)).size;
     const totalUnits = items.length;
+    const totalDiscount = items.reduce((sum, item) => sum + (item.discountAmount || 0), 0);
+    const avgDiscountPercentage = items.length > 0 ? 
+      items.reduce((sum, item) => sum + (item.discountPercentage || 0), 0) / items.length : 0;
+
     switch (metric) {
       case 'revenue':
         return totalRevenue;
@@ -78,6 +82,10 @@ export const MonthOnMonthTable: React.FC<MonthOnMonthTableProps> = ({
         return totalTransactions > 0 ? totalUnits / totalTransactions : 0;
       case 'vat':
         return items.reduce((sum, item) => sum + (item.paymentVAT || 0), 0);
+      case 'discountValue':
+        return totalDiscount;
+      case 'discountPercentage':
+        return avgDiscountPercentage;
       default:
         return 0;
     }
@@ -296,6 +304,9 @@ export const MonthOnMonthTable: React.FC<MonthOnMonthTableProps> = ({
                 <th rowSpan={2} className="text-white font-semibold uppercase tracking-wider px-6 py-3 text-left rounded-tl-lg sticky left-0 bg-blue-800 z-40 max-h-[35px] h-[35px]">
                   Category / Product
                 </th>
+                <th rowSpan={2} className="text-white font-semibold text-xs uppercase tracking-wider px-3 py-2 bg-blue-800 min-w-24">
+                  Contribution %
+                </th>
                 {Object.entries(groupedMonths).map(([quarterKey, months]) => <th key={quarterKey} colSpan={months.length} className="text-white font-semibold text-sm uppercase tracking-wider px-4 py-2 text-center border-l border-blue-600">
                     {quarterKey}
                   </th>)}
@@ -364,6 +375,9 @@ export const MonthOnMonthTable: React.FC<MonthOnMonthTableProps> = ({
                           {categoryData.products.length} products
                         </Badge>
                       </div>
+                    </td>
+                    <td className="px-3 py-3 text-center text-sm text-gray-900 font-mono">
+                      {(categoryData.metricValue / totalsRow.metricValue * 100).toFixed(1)}%
                     </td>
                      {monthlyData.map(({
                   key,

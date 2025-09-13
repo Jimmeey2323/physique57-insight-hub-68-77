@@ -60,37 +60,44 @@ export const EnhancedYearOnYearTable: React.FC<EnhancedYearOnYearTableProps> = (
   };
   const getMetricValue = (items: SalesData[], metric: YearOnYearMetricType) => {
     if (!items.length) return 0;
+    const totalRevenue = items.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
+    const totalTransactions = items.length;
+    const uniqueMembers = new Set(items.map(item => item.memberId)).size;
+    const totalUnits = items.length;
+    const totalDiscount = items.reduce((sum, item) => sum + (item.discountAmount || 0), 0);
+    const avgDiscountPercentage = items.length > 0 ? 
+      items.reduce((sum, item) => sum + (item.discountPercentage || 0), 0) / items.length : 0;
+
     switch (metric) {
       case 'revenue':
-        return items.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
+        return totalRevenue;
       case 'transactions':
-        return items.length;
+        return totalTransactions;
       case 'members':
-        return new Set(items.map(item => item.memberId)).size;
+        return uniqueMembers;
       case 'units':
-        return items.length;
+        return totalUnits;
       // Each sale item is one unit
       case 'atv':
-        const totalRevenue = items.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
-        return items.length > 0 ? totalRevenue / items.length : 0;
+        return totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
       case 'auv':
-        const revenue = items.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
-        const uniqueMembers = new Set(items.map(item => item.memberId)).size;
-        return uniqueMembers > 0 ? revenue / uniqueMembers : 0;
+        return uniqueMembers > 0 ? totalRevenue / uniqueMembers : 0;
       case 'asv':
-        const sessionRevenue = items.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
-        const sessions = new Set(items.map(item => item.saleItemId)).size;
-        return sessions > 0 ? sessionRevenue / sessions : 0;
+        return new Set(items.map(item => item.saleItemId)).size > 0 ? totalRevenue / new Set(items.map(item => item.saleItemId)).size : 0;
       case 'upt':
         const totalItems = items.length;
-        const totalTransactions = new Set(items.map(item => item.paymentTransactionId)).size;
-        return totalTransactions > 0 ? totalItems / totalTransactions : 0;
+        const totalTransactionsCount = new Set(items.map(item => item.paymentTransactionId)).size;
+        return totalTransactionsCount > 0 ? totalItems / totalTransactionsCount : 0;
       case 'vat':
         return items.reduce((sum, item) => sum + (item.paymentVAT || 0), 0);
       case 'netRevenue':
-        const gross = items.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
+        const gross = totalRevenue;
         const vat = items.reduce((sum, item) => sum + (item.paymentVAT || 0), 0);
         return gross - vat;
+      case 'discountValue':
+        return totalDiscount;
+      case 'discountPercentage':
+        return avgDiscountPercentage;
       default:
         return 0;
     }
@@ -103,6 +110,7 @@ export const EnhancedYearOnYearTable: React.FC<EnhancedYearOnYearTableProps> = (
       case 'atv':
       case 'vat':
       case 'netRevenue':
+      case 'discountValue':
         return formatCurrency(value);
       case 'transactions':
       case 'members':
@@ -110,6 +118,8 @@ export const EnhancedYearOnYearTable: React.FC<EnhancedYearOnYearTableProps> = (
         return formatNumber(value);
       case 'upt':
         return value.toFixed(2);
+      case 'discountPercentage':
+        return `${value.toFixed(1)}%`;
       default:
         return formatNumber(value);
     }
