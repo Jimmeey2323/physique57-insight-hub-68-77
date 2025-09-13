@@ -23,18 +23,24 @@ export const ClientConversionDrillDownModalV2: React.FC<ClientConversionDrillDow
   data,
   type
 }) => {
-  // Extract client data based on type
+  // Extract targeted client data based on type and drill-down context
   const clients: NewClientData[] = React.useMemo(() => {
     if (!data) return [];
     
-    switch (type) {
-      case 'month':
-      case 'year':
-      case 'class':
-        return data.clients || [];
-      default:
-        return Array.isArray(data) ? data : [];
+    // For month/year type, use the specific clients from the clicked row
+    if ((type === 'month' || type === 'year') && data.clients) {
+      console.log('Drill-down: Using targeted clients from clicked row:', data.clients.length);
+      return data.clients;
     }
+    
+    // For other types, ensure we return the array format
+    if (Array.isArray(data)) {
+      return data;
+    }
+    
+    // Fallback to empty array
+    console.log('Drill-down: No targeted clients found, showing empty');
+    return [];
   }, [data, type]);
 
   const columns = [

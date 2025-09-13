@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Trophy, BarChart3, Eye, Calendar, Clock, User } from 'lucide-react';
+import { Trophy, BarChart3, Eye, Calendar, Clock, User, ChevronLeft, ChevronRight } from 'lucide-react';
 import { SessionData } from '@/hooks/useSessionsData';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -30,6 +30,8 @@ interface GroupedClassData {
 
 export const ClassPerformanceRankingTable: React.FC<ClassPerformanceRankingTableProps> = ({ data }) => {
   const [selectedClass, setSelectedClass] = useState<GroupedClassData | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   if (!data || data.length === 0) {
     return (
@@ -79,8 +81,19 @@ export const ClassPerformanceRankingTable: React.FC<ClassPerformanceRankingTable
     };
   });
 
-  // Sort by average check-ins
+  // Sort by average check-ins (attendance priority)
   const sortedPerformance = classPerformance.sort((a, b) => b.avgCheckIns - a.avgCheckIns);
+
+  // Pagination logic
+  const totalPages = Math.ceil(sortedPerformance.length / itemsPerPage);
+  const paginatedData = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return sortedPerformance.slice(startIndex, startIndex + itemsPerPage);
+  }, [sortedPerformance, currentPage, itemsPerPage]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+  };
 
   return (
     <div className="space-y-6">
@@ -95,31 +108,33 @@ export const ClassPerformanceRankingTable: React.FC<ClassPerformanceRankingTable
           <div className="overflow-auto border rounded-lg">
             <Table>
               <TableHeader>
-                <TableRow className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-                  <TableHead className="text-white font-bold">Rank</TableHead>
-                  <TableHead className="text-white font-bold">Class Name</TableHead>
-                  <TableHead className="text-white font-bold">Trainer</TableHead>
-                  <TableHead className="text-white font-bold">Day</TableHead>
-                  <TableHead className="text-white font-bold">Time</TableHead>
-                  <TableHead className="text-white font-bold">Location</TableHead>
-                  <TableHead className="text-white font-bold">Sessions</TableHead>
-                  <TableHead className="text-white font-bold">Avg Check-ins</TableHead>
-                  <TableHead className="text-white font-bold">Fill Rate</TableHead>
-                  <TableHead className="text-white font-bold">Total Attendance</TableHead>
-                  <TableHead className="text-white font-bold">Late Cancelled</TableHead>
-                  <TableHead className="text-white font-bold">Revenue</TableHead>
-                  <TableHead className="text-white font-bold">Actions</TableHead>
+                <TableRow>
+                  <TableHead>Rank</TableHead>
+                  <TableHead>Class Name</TableHead>
+                  <TableHead>Trainer</TableHead>
+                  <TableHead>Day</TableHead>
+                  <TableHead>Time</TableHead>
+                  <TableHead>Location</TableHead>
+                  <TableHead>Sessions</TableHead>
+                  <TableHead>Avg Check-ins</TableHead>
+                  <TableHead>Fill Rate</TableHead>
+                  <TableHead>Total Attendance</TableHead>
+                  <TableHead>Late Cancelled</TableHead>
+                  <TableHead>Revenue</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sortedPerformance.map((classData, index) => (
-                  <TableRow key={classData.uniqueId} className="hover:bg-gray-50">
+                {paginatedData.map((classData, index) => {
+                  const actualRank = (currentPage - 1) * itemsPerPage + index + 1;
+                  return (
+                  <TableRow key={classData.uniqueId} className="hover:bg-muted/50">
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-1">
-                        {index < 3 && (
-                          <Trophy className={`w-4 h-4 ${index === 0 ? 'text-yellow-500' : index === 1 ? 'text-gray-400' : 'text-amber-600'}`} />
+                        {actualRank <= 3 && (
+                          <Trophy className={`w-4 h-4 ${actualRank === 1 ? 'text-yellow-500' : actualRank === 2 ? 'text-gray-400' : 'text-amber-600'}`} />
                         )}
-                        <span className="font-bold">{index + 1}</span>
+                        <span className="font-bold">{actualRank}</span>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -232,10 +247,66 @@ export const ClassPerformanceRankingTable: React.FC<ClassPerformanceRankingTable
                       </Dialog>
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-4">
+              <div className="text-sm text-muted-foreground">
+                Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, sortedPerformance.length)} of {sortedPerformance.length} results
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Previous
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handlePageChange(pageNum)}
+                        className="w-8 h-8 p-0"
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
           
           <Card className="mt-4">
             <CardHeader className="pb-3">

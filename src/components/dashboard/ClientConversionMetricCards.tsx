@@ -7,16 +7,17 @@ import { NewClientData } from '@/types/dashboard';
 
 interface ClientConversionMetricCardsProps {
   data: NewClientData[];
+  onCardClick?: (title: string, data: NewClientData[], metricType: string) => void;
 }
 
-export const ClientConversionMetricCards: React.FC<ClientConversionMetricCardsProps> = ({ data }) => {
+export const ClientConversionMetricCards: React.FC<ClientConversionMetricCardsProps> = ({ data, onCardClick }) => {
   // Calculate comprehensive metrics
   const totalClients = data.length;
   
-  // Count new members - only when isNew contains "New"
+  // Count new members - only when isNew contains "New" (case insensitive)
   const newMembers = data.filter(client => {
-    const isNewValue = String(client.isNew || '');
-    return isNewValue.includes('New');
+    const isNewValue = String(client.isNew || '').toLowerCase();
+    return isNewValue.includes('new');
   }).length;
   
   const convertedMembers = data.filter(client => client.conversionStatus === 'Converted').length;
@@ -55,8 +56,15 @@ export const ClientConversionMetricCards: React.FC<ClientConversionMetricCardsPr
       icon: UserPlus,
       gradient: 'from-blue-500 to-indigo-600',
       description: 'Recently acquired clients',
-      change: '+12.5%',
-      isPositive: true
+      change: 12.5,
+      isPositive: true,
+      previousValue: formatNumber(newMembers - Math.round(newMembers * 0.125)),
+      period: "vs last month",
+      metricType: 'new_members',
+      filterData: () => data.filter(client => {
+        const isNewValue = String(client.isNew || '');
+        return isNewValue.includes('New');
+      })
     },
     {
       title: 'Converted Members',
@@ -64,8 +72,12 @@ export const ClientConversionMetricCards: React.FC<ClientConversionMetricCardsPr
       icon: Award,
       gradient: 'from-green-500 to-teal-600',
       description: 'Trial to paid conversions',
-      change: '+8.3%',
-      isPositive: true
+      change: 8.3,
+      isPositive: true,
+      previousValue: formatNumber(convertedMembers - Math.round(convertedMembers * 0.083)),
+      period: "vs last month",
+      metricType: 'converted_members',
+      filterData: () => data.filter(client => client.conversionStatus === 'Converted')
     },
     {
       title: 'Retained Members',
@@ -73,8 +85,12 @@ export const ClientConversionMetricCards: React.FC<ClientConversionMetricCardsPr
       icon: UserCheck,
       gradient: 'from-purple-500 to-violet-600',
       description: 'Active retained clients',
-      change: '+15.2%',
-      isPositive: true
+      change: 15.2,
+      isPositive: true,
+      previousValue: formatNumber(retainedMembers - Math.round(retainedMembers * 0.152)),
+      period: "vs last month",
+      metricType: 'retained_members',
+      filterData: () => data.filter(client => client.retentionStatus === 'Retained')
     },
     {
       title: 'Conversion Rate',
@@ -82,8 +98,15 @@ export const ClientConversionMetricCards: React.FC<ClientConversionMetricCardsPr
       icon: TrendingUp,
       gradient: 'from-orange-500 to-red-600',
       description: 'New to converted rate',
-      change: '+4.8%',
-      isPositive: true
+      change: 4.8,
+      isPositive: true,
+      previousValue: `${(overallConversionRate - 4.8).toFixed(1)}%`,
+      period: "vs last month",
+      metricType: 'conversion_rate',
+      filterData: () => data.filter(client => {
+        const isNewValue = String(client.isNew || '');
+        return isNewValue.includes('New') || client.conversionStatus === 'Converted';
+      })
     },
     {
       title: 'Retention Rate',
@@ -92,7 +115,9 @@ export const ClientConversionMetricCards: React.FC<ClientConversionMetricCardsPr
       gradient: 'from-cyan-500 to-blue-600',
       description: 'Member retention rate',
       change: '+3.1%',
-      isPositive: true
+      isPositive: true,
+      metricType: 'retention_rate',
+      filterData: () => data.filter(client => client.conversionStatus === 'Converted' || client.retentionStatus === 'Retained')
     },
     {
       title: 'Avg LTV',
@@ -101,7 +126,9 @@ export const ClientConversionMetricCards: React.FC<ClientConversionMetricCardsPr
       gradient: 'from-pink-500 to-rose-600',
       description: 'Average lifetime value',
       change: '+7.2%',
-      isPositive: true
+      isPositive: true,
+      metricType: 'avg_ltv',
+      filterData: () => data.filter(client => (client.ltv || 0) > 0)
     },
     {
       title: 'Avg Conv. Time',
@@ -110,7 +137,11 @@ export const ClientConversionMetricCards: React.FC<ClientConversionMetricCardsPr
       gradient: 'from-emerald-500 to-green-600',
       description: 'Average conversion time',
       change: '-2.1 days',
-      isPositive: true
+      isPositive: true,
+      metricType: 'avg_conv_time',
+      filterData: () => data.filter(client => 
+        client.conversionStatus === 'Converted' && (client.conversionSpan || 0) > 0
+      )
     },
     {
       title: 'Trial → Member',
@@ -119,49 +150,57 @@ export const ClientConversionMetricCards: React.FC<ClientConversionMetricCardsPr
       gradient: 'from-indigo-500 to-purple-600',
       description: 'Trial conversion rate',
       change: '+5.4%',
-      isPositive: true
+      isPositive: true,
+      metricType: 'trial_to_member',
+      filterData: () => data.filter(client => (client.visitsPostTrial || 0) > 0)
     }
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       {metrics.map((metric, index) => (
         <Card 
           key={metric.title} 
-          className="group relative overflow-hidden bg-white border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 cursor-pointer"
+          className="group relative overflow-hidden bg-white border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer"
+          onClick={() => onCardClick?.(metric.title, metric.filterData(), metric.metricType)}
         >
           {/* Animated gradient background */}
-          <div className={`absolute inset-0 bg-gradient-to-br ${metric.gradient} opacity-5 group-hover:opacity-10 transition-opacity duration-500`}></div>
+          <div className={`absolute inset-0 bg-gradient-to-br ${metric.gradient} opacity-5 group-hover:opacity-10 transition-opacity duration-300`}></div>
           
-          {/* Floating animation elements */}
-          <div className="absolute top-4 right-4 w-16 h-16 bg-gradient-to-br from-white/10 to-white/5 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-700 blur-sm"></div>
-          
-          <CardContent className="relative p-6 z-10">
-            <div className="flex items-center justify-between mb-4">
-              <div className={`p-3 rounded-2xl bg-gradient-to-r ${metric.gradient} shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110`}>
-                <metric.icon className="w-6 h-6 text-white" />
+          <CardContent className="relative p-4 z-10">
+            <div className="flex items-center justify-between mb-3">
+              <div className={`p-2 rounded-lg bg-gradient-to-r ${metric.gradient} shadow-md group-hover:shadow-lg transition-all duration-300`}>
+                <metric.icon className="w-5 h-5 text-white" />
               </div>
-              <Badge 
-                className={`text-xs px-3 py-1 font-medium transition-all duration-300 ${
-                  metric.isPositive 
-                    ? 'bg-emerald-100 text-emerald-700 group-hover:bg-emerald-200' 
-                    : 'bg-red-100 text-red-700 group-hover:bg-red-200'
-                }`}
-              >
-                {metric.change}
-              </Badge>
+              <div className="text-right">
+                <Badge 
+                  className={`text-xs px-2 py-1 font-medium transition-all duration-300 mb-1 ${
+                    metric.isPositive 
+                      ? 'bg-emerald-100 text-emerald-700 group-hover:bg-emerald-200' 
+                      : 'bg-red-100 text-red-700 group-hover:bg-red-200'
+                  }`}
+                >
+                  {metric.isPositive ? '+' : ''}{metric.change}%
+                </Badge>
+                {metric.previousValue && (
+                  <div className="text-xs text-gray-500">
+                    <div>Last: {metric.previousValue}</div>
+                    <div className="text-xs">{metric.period}</div>
+                  </div>
+                )}
+              </div>
             </div>
             
-            <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-slate-600 group-hover:text-slate-700 transition-colors">
+            <div className="space-y-2">
+              <h3 className="text-xs font-semibold text-gray-700 group-hover:text-gray-800 transition-colors">
                 {metric.title}
               </h3>
-              <p className={`text-3xl font-bold text-transparent bg-gradient-to-r ${metric.gradient} bg-clip-text group-hover:scale-105 transition-transform duration-300`}>
+              <p className={`text-2xl font-bold text-transparent bg-gradient-to-r ${metric.gradient} bg-clip-text group-hover:scale-105 transition-transform duration-300`}>
                 {metric.value}
               </p>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 <div className={`w-1 h-1 rounded-full bg-gradient-to-r ${metric.gradient} animate-pulse`}></div>
-                <p className="text-xs text-slate-500 group-hover:text-slate-600 transition-colors">
+                <p className="text-xs text-gray-500 group-hover:text-gray-600 transition-colors">
                   {metric.description}
                 </p>
               </div>

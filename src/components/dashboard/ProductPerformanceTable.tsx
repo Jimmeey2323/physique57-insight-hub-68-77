@@ -267,11 +267,57 @@ export const ProductPerformanceTable: React.FC<ProductPerformanceTableProps> = (
                     </div>
                   </td>
                   {monthlyData.map(({
-                key
+                key,
+                year,
+                month,
+                display
               }, monthIndex) => {
                 const current = item.monthlyValues[key] || 0;
                 const previous = monthIndex > 0 ? item.monthlyValues[monthlyData[monthIndex - 1].key] || 0 : 0;
-                return <td key={key} className="px-3 py-3 text-center text-sm text-gray-900 font-mono border-l border-gray-100">
+                
+                return <td 
+                  key={key} 
+                  className="px-3 py-3 text-center text-sm text-gray-900 font-mono border-l border-gray-100 hover:bg-blue-50 cursor-pointer transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevent row click
+                    
+                    // Filter data for this specific month and product
+                    const monthSpecificData = (item.rawData || []).filter((transaction: any) => {
+                      const itemDate = parseDate(transaction.paymentDate);
+                      if (!itemDate) return false;
+                      return itemDate.getFullYear() === year && itemDate.getMonth() + 1 === month;
+                    });
+                    
+                    const monthRevenue = monthSpecificData.reduce((sum: any, transaction: any) => sum + (transaction.paymentValue || 0), 0);
+                    const monthTransactions = monthSpecificData.length;
+                    const monthCustomers = new Set(monthSpecificData.map((transaction: any) => transaction.memberId || transaction.customerEmail)).size;
+                    
+                    const enhancedCellData = {
+                      ...item,
+                      name: `${item.product} - ${display}`,
+                      totalRevenue: monthRevenue,
+                      grossRevenue: monthRevenue,
+                      netRevenue: monthRevenue,
+                      totalValue: monthRevenue,
+                      totalCurrent: monthRevenue,
+                      metricValue: monthRevenue,
+                      transactions: monthTransactions,
+                      totalTransactions: monthTransactions,
+                      uniqueMembers: monthCustomers,
+                      totalCustomers: monthCustomers,
+                      rawData: monthSpecificData,
+                      filteredTransactionData: monthSpecificData,
+                      isDynamic: true,
+                      calculatedFromFiltered: true,
+                      cellSpecific: true,
+                      month: display,
+                      monthKey: key
+                    };
+                    
+                    console.log(`Cell click: ${item.product} - ${display}: ${monthTransactions} transactions, ${monthRevenue} revenue`);
+                    onRowClick(enhancedCellData);
+                  }}
+                >
                         <div className="flex items-center justify-center">
                           {formatMetricValue(current, selectedMetric)}
                           {getGrowthIndicator(current, previous)}
@@ -280,12 +326,85 @@ export const ProductPerformanceTable: React.FC<ProductPerformanceTableProps> = (
               })}
                 </tr>)}
               <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-t-4 border-gray-900 font-bold bg-slate-100">
-                <td className="px-6 py-3 text-sm font-bold text-gray-900 sticky left-0 border-r border-gray-200 bg-slate-100">
+                <td 
+                  className="px-6 py-3 text-sm font-bold text-gray-900 sticky left-0 border-r border-gray-200 bg-slate-100 hover:bg-blue-100 cursor-pointer transition-colors"
+                  onClick={() => {
+                    // Total row click - show all data
+                    const totalRevenue = data.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
+                    const totalTransactions = data.length;
+                    const totalCustomers = new Set(data.map(item => item.memberId || item.customerEmail)).size;
+                    
+                    const totalRowData = {
+                      name: 'All Products - Total',
+                      totalRevenue,
+                      grossRevenue: totalRevenue,
+                      netRevenue: totalRevenue,
+                      totalValue: totalRevenue,
+                      totalCurrent: totalRevenue,
+                      metricValue: totalRevenue,
+                      transactions: totalTransactions,
+                      totalTransactions,
+                      uniqueMembers: totalCustomers,
+                      totalCustomers,
+                      rawData: data,
+                      filteredTransactionData: data,
+                      isDynamic: true,
+                      calculatedFromFiltered: true,
+                      isTotal: true
+                    };
+                    
+                    console.log(`Total row click: All products - ${totalTransactions} transactions, ${totalRevenue} revenue`);
+                    onRowClick(totalRowData);
+                  }}
+                >
                   TOTAL
                 </td>
                 {monthlyData.map(({
-                key
-              }) => <td key={key} className="px-3 py-3 text-center text-sm text-indigo-900 font-mono font-bold border-l border-gray-200 bg-slate-200">
+                key,
+                year,
+                month,
+                display
+              }) => <td 
+                key={key} 
+                className="px-3 py-3 text-center text-sm text-indigo-900 font-mono font-bold border-l border-gray-200 bg-slate-200 hover:bg-blue-100 cursor-pointer transition-colors"
+                onClick={() => {
+                  // Total cell click for specific month
+                  const monthSpecificData = data.filter(item => {
+                    const itemDate = parseDate(item.paymentDate);
+                    if (!itemDate) return false;
+                    return itemDate.getFullYear() === year && itemDate.getMonth() + 1 === month;
+                  });
+                  
+                  const monthRevenue = monthSpecificData.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
+                  const monthTransactions = monthSpecificData.length;
+                  const monthCustomers = new Set(monthSpecificData.map(item => item.memberId || item.customerEmail)).size;
+                  
+                  const totalCellData = {
+                    name: `All Products - ${display}`,
+                    totalRevenue: monthRevenue,
+                    grossRevenue: monthRevenue,
+                    netRevenue: monthRevenue,
+                    totalValue: monthRevenue,
+                    totalCurrent: monthRevenue,
+                    metricValue: monthRevenue,
+                    transactions: monthTransactions,
+                    totalTransactions: monthTransactions,
+                    uniqueMembers: monthCustomers,
+                    totalCustomers: monthCustomers,
+                    rawData: monthSpecificData,
+                    filteredTransactionData: monthSpecificData,
+                    isDynamic: true,
+                    calculatedFromFiltered: true,
+                    isTotal: true,
+                    cellSpecific: true,
+                    month: display,
+                    monthKey: key
+                  };
+                  
+                  console.log(`Total cell click: All products - ${display}: ${monthTransactions} transactions, ${monthRevenue} revenue`);
+                  onRowClick(totalCellData);
+                }}
+              >
                     {formatMetricValue(totalsRow.monthlyValues[key] || 0, selectedMetric)}
                   </td>)}
               </tr>

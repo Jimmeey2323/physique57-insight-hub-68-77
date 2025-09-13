@@ -37,6 +37,71 @@ export const ModernDrillDownModal: React.FC<ModernDrillDownModalProps> = ({
 }) => {
   if (!data) return null;
 
+  // Handle expiration data specifically
+  const isExpirationData = Array.isArray(data) && data.length > 0 && data[0].hasOwnProperty('status');
+  
+  const renderExpirationDetails = () => {
+    if (!isExpirationData) return null;
+    
+    const expirationData = data as any[];
+    const activeCount = expirationData.filter(item => item.status === 'Active').length;
+    const churnedCount = expirationData.filter(item => item.status === 'Churned').length;
+    const frozenCount = expirationData.filter(item => item.status === 'Frozen').length;
+    
+    return (
+      <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-slate-800">
+            <Users className="w-5 h-5" />
+            Member Details ({expirationData.length} total)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="text-center p-4 bg-white rounded-lg border">
+              <div className="text-2xl font-bold text-green-600">{activeCount}</div>
+              <div className="text-sm text-green-600">Active</div>
+            </div>
+            <div className="text-center p-4 bg-white rounded-lg border">
+              <div className="text-2xl font-bold text-red-600">{churnedCount}</div>
+              <div className="text-sm text-red-600">Churned</div>
+            </div>
+            <div className="text-center p-4 bg-white rounded-lg border">
+              <div className="text-2xl font-bold text-yellow-600">{frozenCount}</div>
+              <div className="text-sm text-yellow-600">Frozen</div>
+            </div>
+          </div>
+          
+          <div className="max-h-96 overflow-y-auto space-y-2">
+            {expirationData.slice(0, 50).map((member: any, index: number) => (
+              <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg border hover:bg-slate-50 transition-colors">
+                <div className="flex-1">
+                  <div className="font-medium text-slate-800">
+                    {member.firstName} {member.lastName}
+                  </div>
+                  <div className="text-sm text-slate-600">
+                    {member.email} • {member.membershipName}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className={`text-sm font-medium ${
+                    member.status === 'Active' ? 'text-green-600' :
+                    member.status === 'Churned' ? 'text-red-600' : 'text-yellow-600'
+                  }`}>
+                    {member.status}
+                  </div>
+                  <div className="text-xs text-slate-500">
+                    End: {member.endDate}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   // Helper functions
   const safeNumber = (value: any, defaultValue: number = 0): number => {
     const num = Number(value);
@@ -365,6 +430,7 @@ export const ModernDrillDownModal: React.FC<ModernDrillDownModalProps> = ({
             </TabsList>
             
             <TabsContent value="overview" className="space-y-6">
+              {renderExpirationDetails()}
               {renderTrainerSpecificData()}
               
               <Card className="bg-gradient-to-br from-indigo-50 to-indigo-100 border-indigo-200">

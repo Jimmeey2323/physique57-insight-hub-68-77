@@ -103,7 +103,7 @@ export const ExpirationDataTables: React.FC<ExpirationDataTablesProps> = ({ data
   return (
     <div className="space-y-6">
       {/* Search Bar */}
-      <Card className="bg-white/70 backdrop-blur-sm border-slate-200/50">
+      <Card className="bg-white/90 backdrop-blur-sm border-slate-200/50 shadow-lg">
         <CardContent className="p-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
@@ -111,7 +111,7 @@ export const ExpirationDataTables: React.FC<ExpirationDataTablesProps> = ({ data
               placeholder="Search by name, email, membership, or status..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-10 border-slate-300 focus:border-blue-500 focus:ring-blue-500"
             />
           </div>
         </CardContent>
@@ -119,9 +119,10 @@ export const ExpirationDataTables: React.FC<ExpirationDataTablesProps> = ({ data
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Table 1: Churned Memberships */}
-        <Card className="bg-white/70 backdrop-blur-sm border-slate-200/50">
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold bg-gradient-to-r from-red-600 to-red-500 bg-clip-text text-transparent">
+        <Card className="bg-white/90 backdrop-blur-sm border-slate-200/50 shadow-lg hover:shadow-xl transition-all duration-300">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg font-semibold bg-gradient-to-r from-red-600 to-red-500 bg-clip-text text-transparent flex items-center gap-2">
+              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
               Churned Memberships ({formatNumber(churnedData.length)})
             </CardTitle>
           </CardHeader>
@@ -162,9 +163,10 @@ export const ExpirationDataTables: React.FC<ExpirationDataTablesProps> = ({ data
         </Card>
 
         {/* Table 2: Frozen Memberships */}
-        <Card className="bg-white/70 backdrop-blur-sm border-slate-200/50">
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold bg-gradient-to-r from-yellow-600 to-yellow-500 bg-clip-text text-transparent">
+        <Card className="bg-white/90 backdrop-blur-sm border-slate-200/50 shadow-lg hover:shadow-xl transition-all duration-300">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg font-semibold bg-gradient-to-r from-yellow-600 to-yellow-500 bg-clip-text text-transparent flex items-center gap-2">
+              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
               Frozen Memberships ({formatNumber(frozenData.length)})
             </CardTitle>
           </CardHeader>
@@ -205,9 +207,10 @@ export const ExpirationDataTables: React.FC<ExpirationDataTablesProps> = ({ data
         </Card>
 
         {/* Table 3: Active Memberships */}
-        <Card className="bg-white/70 backdrop-blur-sm border-slate-200/50">
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold bg-gradient-to-r from-green-600 to-green-500 bg-clip-text text-transparent">
+        <Card className="bg-white/90 backdrop-blur-sm border-slate-200/50 shadow-lg hover:shadow-xl transition-all duration-300">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg font-semibold bg-gradient-to-r from-green-600 to-green-500 bg-clip-text text-transparent flex items-center gap-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
               Active Memberships ({formatNumber(activeData.length)})
             </CardTitle>
           </CardHeader>
@@ -248,9 +251,10 @@ export const ExpirationDataTables: React.FC<ExpirationDataTablesProps> = ({ data
         </Card>
 
         {/* Table 4: Membership Summary */}
-        <Card className="bg-white/70 backdrop-blur-sm border-slate-200/50">
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold bg-gradient-to-r from-slate-700 to-slate-500 bg-clip-text text-transparent">
+        <Card className="bg-white/90 backdrop-blur-sm border-slate-200/50 shadow-lg hover:shadow-xl transition-all duration-300">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg font-semibold bg-gradient-to-r from-slate-700 to-slate-500 bg-clip-text text-transparent flex items-center gap-2">
+              <div className="w-2 h-2 bg-gradient-to-r from-slate-500 to-slate-600 rounded-full"></div>
               Membership Type Summary
             </CardTitle>
           </CardHeader>

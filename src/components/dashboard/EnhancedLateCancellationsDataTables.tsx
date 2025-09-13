@@ -10,11 +10,12 @@ import { AlertTriangle, Users, Calendar, Package, MapPin, ChevronLeft, ChevronRi
 
 interface EnhancedLateCancellationsDataTablesProps {
   data: LateCancellationsData[];
+  onDrillDown?: (data: any) => void;
 }
 
 const ITEMS_PER_PAGE = 100;
 
-export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellationsDataTablesProps> = ({ data }) => {
+export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellationsDataTablesProps> = ({ data, onDrillDown }) => {
   const [activeTab, setActiveTab] = useState('multiple-day');
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -336,8 +337,14 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
                   key={index} 
                   className="h-[35px] max-h-[35px] hover:bg-gray-50 cursor-pointer transition-colors"
                   onClick={() => {
-                    // Drill-down functionality - show member details modal
-                    console.log('Member clicked:', member);
+                    if (onDrillDown) {
+                      onDrillDown({
+                        type: 'member',
+                        title: `Member: ${member.memberName}`,
+                        data: member,
+                        rawData: member.cancellations || member.sessionDetails
+                      });
+                    }
                   }}
                 >
                   <TableCell className="font-medium h-[35px] py-2">
@@ -431,8 +438,14 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
                 key={index} 
                 className="h-[35px] max-h-[35px] hover:bg-gray-50 cursor-pointer transition-colors"
                 onClick={() => {
-                  // Drill-down functionality - show class details
-                  console.log('Class type clicked:', classType);
+                  if (onDrillDown) {
+                    onDrillDown({
+                      type: 'class',
+                      title: `Class Type: ${classType.className}`,
+                      data: classType,
+                      rawData: data.filter(item => item.cleanedClass === classType.className)
+                    });
+                  }
                 }}
               >
                 <TableCell className="font-medium h-[35px] py-2">

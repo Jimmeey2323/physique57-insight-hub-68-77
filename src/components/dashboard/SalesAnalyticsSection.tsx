@@ -16,6 +16,7 @@ import { SalesAnimatedMetricCards } from './SalesAnimatedMetricCards';
 import { SalesInteractiveCharts } from './SalesInteractiveCharts';
 import { SoldByMonthOnMonthTable } from './SoldByMonthOnMonthTable';
 import { PaymentMethodMonthOnMonthTable } from './PaymentMethodMonthOnMonthTable';
+import { SalesHeroSection } from './SalesHeroSection';
 import { NoteTaker } from '@/components/ui/NoteTaker';
 import { SalesData, FilterOptions, MetricCardData, YearOnYearMetricType } from '@/types/dashboard';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
@@ -28,6 +29,10 @@ interface SalesAnalyticsSectionProps {
 }
 
 const locations = [{
+  id: 'all',
+  name: 'All Locations',
+  fullName: 'All Locations'
+}, {
   id: 'kwality',
   name: 'Kwality House, Kemps Corner',
   fullName: 'Kwality House, Kemps Corner'
@@ -42,7 +47,7 @@ const locations = [{
 }];
 
 export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ data }) => {
-  const [activeLocation, setActiveLocation] = useState('kwality');
+  const [activeLocation, setActiveLocation] = useState('all');
   const [currentTheme, setCurrentTheme] = useState('classic');
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [drillDownData, setDrillDownData] = useState<any>(null);
@@ -72,21 +77,28 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
     let filtered = [...rawData];
 
     // Apply location filter
-    filtered = filtered.filter(item => {
-      const locationMatch = activeLocation === 'kwality' 
-        ? item.calculatedLocation === 'Kwality House, Kemps Corner' 
-        : activeLocation === 'supreme' 
-        ? item.calculatedLocation === 'Supreme HQ, Bandra' 
-        : item.calculatedLocation?.includes('Kenkere') || item.calculatedLocation === 'Kenkere House';
-      return locationMatch;
-    });
+    if (activeLocation !== 'all') {
+      filtered = filtered.filter(item => {
+        const locationMatch = activeLocation === 'kwality' 
+          ? item.calculatedLocation === 'Kwality House, Kemps Corner' 
+          : activeLocation === 'supreme' 
+          ? item.calculatedLocation === 'Supreme HQ, Bandra' 
+          : item.calculatedLocation?.includes('Kenkere') || item.calculatedLocation === 'Kenkere House';
+        return locationMatch;
+      });
+    }
 
     console.log('After location filter:', filtered.length, 'records');
 
     // Apply date range filter
     if (!includeHistoric && (filters.dateRange.start || filters.dateRange.end)) {
       const startDate = filters.dateRange.start ? new Date(filters.dateRange.start) : null;
-      const endDate = filters.dateRange.end ? new Date(filters.dateRange.end) : null;
+      const endDate = filters.dateRange.end ? (() => {
+        const date = new Date(filters.dateRange.end);
+        // Set to end of day to include all transactions on the end date
+        date.setHours(23, 59, 59, 999);
+        return date;
+      })() : null;
       
       console.log('Applying date filter:', startDate, 'to', endDate);
       
@@ -362,14 +374,19 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
 
   return (
     <div className="space-y-8">
+      {/* Hero Section with Dynamic Metrics */}
+      <SalesHeroSection data={filteredData} />
+
       {/* Note Taker Component */}
-      <NoteTaker />
+      <div className="container mx-auto px-6">
+        <NoteTaker />
+      </div>
 
       {/* Filter and Location Tabs */}
-      <div className="space-y-6">
+      <div className="container mx-auto px-6 space-y-6">
         <Tabs value={activeLocation} onValueChange={setActiveLocation} className="w-full">
           <div className="flex justify-center mb-8">
-            <TabsList className="bg-white/90 backdrop-blur-sm p-2 rounded-2xl shadow-xl border-0 grid grid-cols-3 w-full max-w-7xl min-h-24 overflow-hidden">
+            <TabsList className="bg-white/90 backdrop-blur-sm p-2 rounded-2xl shadow-xl border-0 grid grid-cols-4 w-full max-w-7xl min-h-24 overflow-hidden">
               {locations.map(location => (
                 <TabsTrigger 
                   key={location.id} 
@@ -387,17 +404,11 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
 
           {locations.map(location => (
             <TabsContent key={location.id} value={location.id} className="space-y-8">
-              <div className="flex justify-between items-center gap-4">
-                <AutoCloseFilterSection 
+              <div className="w-full">
+                <AutoCloseFilterSection
                   filters={filters} 
                   onFiltersChange={setFilters} 
                   onReset={resetFilters} 
-                />
-                <AdvancedExportButton 
-                  salesData={filteredData}
-                  defaultFileName={`sales-analytics-${location.name.toLowerCase().replace(/\s+/g, '-')}`}
-                  size="default"
-                  variant="outline"
                 />
               </div>
 
@@ -410,14 +421,14 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
 
               <UnifiedTopBottomSellers data={filteredData} />
 
-              <Tabs defaultValue="yearOnYear" className="w-full">
-                <TabsList className="bg-white/90 backdrop-blur-sm p-2 rounded-2xl shadow-xl border-0 grid grid-cols-6 w-full max-w-6xl mx-auto overflow-hidden">
-                  <TabsTrigger value="yearOnYear" className="relative rounded-xl px-4 py-3 font-semibold text-xs transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50">
-                    Year-on-Year
-                  </TabsTrigger>
-                  <TabsTrigger value="monthOnMonth" className="relative rounded-xl px-4 py-3 font-semibold text-xs transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50">
-                    Month-on-Month
-                  </TabsTrigger>
+                <Tabs defaultValue="monthOnMonth" className="w-full">
+                  <TabsList className="bg-white/90 backdrop-blur-sm p-2 rounded-2xl shadow-xl border-0 grid grid-cols-6 w-full max-w-6xl mx-auto overflow-hidden">
+                    <TabsTrigger value="monthOnMonth" className="relative rounded-xl px-4 py-3 font-semibold text-xs transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50">
+                      Month-on-Month
+                    </TabsTrigger>
+                    <TabsTrigger value="yearOnYear" className="relative rounded-xl px-4 py-3 font-semibold text-xs transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50">
+                      Year-on-Year
+                    </TabsTrigger>
                   <TabsTrigger value="productPerformance" className="relative rounded-xl px-4 py-3 font-semibold text-xs transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50">
                     Product Performance
                   </TabsTrigger>
@@ -432,29 +443,29 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                   </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="yearOnYear" className="mt-8">
-                  <section className="space-y-4">
-                    <h2 className="text-2xl font-bold text-gray-900">Year-on-Year Analysis</h2>
-                    <EnhancedYearOnYearTable 
-                      data={allHistoricData} 
-                      onRowClick={handleRowClick} 
-                      selectedMetric={activeYoyMetric} 
-                    />
-                  </section>
-                </TabsContent>
+                  <TabsContent value="monthOnMonth" className="mt-8">
+                    <section className="space-y-4">
+                      <h2 className="text-2xl font-bold text-gray-900">Month-on-Month Analysis</h2>
+                      <MonthOnMonthTable 
+                        data={allHistoricData} 
+                        onRowClick={handleRowClick} 
+                        collapsedGroups={collapsedGroups} 
+                        onGroupToggle={handleGroupToggle} 
+                        selectedMetric={activeYoyMetric} 
+                      />
+                    </section>
+                  </TabsContent>
 
-                <TabsContent value="monthOnMonth" className="mt-8">
-                  <section className="space-y-4">
-                    <h2 className="text-2xl font-bold text-gray-900">Month-on-Month Analysis</h2>
-                    <MonthOnMonthTable 
-                      data={allHistoricData} 
-                      onRowClick={handleRowClick} 
-                      collapsedGroups={collapsedGroups} 
-                      onGroupToggle={handleGroupToggle} 
-                      selectedMetric={activeYoyMetric} 
-                    />
-                  </section>
-                </TabsContent>
+                  <TabsContent value="yearOnYear" className="mt-8">
+                    <section className="space-y-4">
+                      <h2 className="text-2xl font-bold text-gray-900">Year-on-Year Analysis</h2>
+                      <EnhancedYearOnYearTable 
+                        data={allHistoricData} 
+                        onRowClick={handleRowClick} 
+                        selectedMetric={activeYoyMetric} 
+                      />
+                    </section>
+                  </TabsContent>
 
                 <TabsContent value="productPerformance" className="mt-8">
                   <section className="space-y-4">
@@ -505,6 +516,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
         </Tabs>
       </div>
 
+      {/* Modal */}
       {drillDownData && (
         <EnhancedSalesDrillDownModal 
           isOpen={!!drillDownData} 
@@ -517,4 +529,4 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
   );
 };
 
-export default SalesAnalyticsSection;
+

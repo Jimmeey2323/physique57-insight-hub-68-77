@@ -122,18 +122,18 @@ export const ClassAttendanceSection: React.FC = () => {
         {/* Location Tabs */}
         <Tabs value={activeLocation} onValueChange={setActiveLocation} className="w-full">
           <div className="flex justify-center mb-8">
-            <TabsList className="bg-white/90 backdrop-blur-sm p-2 rounded-2xl shadow-xl border-0 grid grid-cols-4 w-full max-w-3xl overflow-hidden">
+            <TabsList className="glass-morphism p-2 rounded-2xl shadow-lg border-0 grid grid-cols-4 w-full max-w-4xl">
               {locations.map(location => (
                 <TabsTrigger 
                   key={location.id} 
                   value={location.id} 
-                  className="relative rounded-xl px-6 py-4 font-semibold text-sm transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50"
+                  className="tab-modern"
                 >
                   <div className="flex items-center gap-2">
                     {location.id === 'all' ? <Building2 className="w-4 h-4" /> : <MapPin className="w-4 h-4" />}
                     <div className="text-center">
                       <div className="font-bold">{location.name.split(',')[0]}</div>
-                      {location.name.includes(',') && <div className="text-xs opacity-80">{location.name.split(',')[1]?.trim()}</div>}
+                      {location.name.includes(',') && <div className="text-xs opacity-75">{location.name.split(',')[1]?.trim()}</div>}
                     </div>
                   </div>
                 </TabsTrigger>

@@ -96,19 +96,24 @@ export const PaymentMethodMonthOnMonthTable: React.FC<PaymentMethodMonthOnMonthT
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth();
 
-    // Generate last 18 months of data
-    for (let i = 17; i >= 0; i--) {
-      const date = new Date(currentYear, currentMonth - i, 1);
-      const year = date.getFullYear();
-      const month = date.getMonth() + 1;
-      const monthName = monthNames[date.getMonth()];
-      months.push({
-        key: `${year}-${String(month).padStart(2, '0')}`,
-        display: `${monthName} ${year}`,
-        year: year,
-        month: month,
-        quarter: Math.ceil(month / 3)
-      });
+    // Generate months starting from Jan 2024 up to current month
+    const startYear = 2024;
+    const startMonth = 0; // January (0-indexed)
+    
+    for (let year = startYear; year <= currentYear; year++) {
+      const fromMonth = year === startYear ? startMonth : 0;
+      const toMonth = year === currentYear ? currentMonth : 11;
+      
+      for (let month = fromMonth; month <= toMonth; month++) {
+        const monthName = monthNames[month];
+        months.push({
+          key: `${year}-${String(month + 1).padStart(2, '0')}`,
+          display: `${monthName} ${year}`,
+          year: year,
+          month: month + 1,
+          quarter: Math.ceil((month + 1) / 3)
+        });
+      }
     }
     return months;
   }, []);
@@ -173,16 +178,35 @@ export const PaymentMethodMonthOnMonthTable: React.FC<PaymentMethodMonthOnMonthT
     console.log('Sample method data:', paymentMethodData[0]);
     return paymentMethodData.sort((a, b) => b.metricValue - a.metricValue);
   }, [data, selectedMetric, monthlyData]);
-  const getGrowthIndicator = (current: number, previous: number) => {
+  const getGrowthIndicator = (current: number, previous: number, period: 'month' = 'month') => {
     if (previous === 0 && current === 0) return null;
-    if (previous === 0) return <TrendingUp className="w-3 h-3 text-green-500 inline ml-1" />;
+    if (previous === 0) return (
+      <div className="flex items-center gap-1">
+        <TrendingUp className="w-3 h-3 text-green-500 inline" />
+        <span className="text-green-600 text-xs">New vs last {period}</span>
+      </div>
+    );
     const growth = (current - previous) / previous * 100;
     if (growth > 5) {
-      return <TrendingUp className="w-3 h-3 text-green-500 inline ml-1" />;
+      return (
+        <div className="flex items-center gap-1">
+          <TrendingUp className="w-3 h-3 text-green-500 inline" />
+          <span className="text-green-600 text-xs">+{growth.toFixed(1)}% vs last {period}</span>
+        </div>
+      );
     } else if (growth < -5) {
-      return <TrendingDown className="w-3 h-3 text-red-500 inline ml-1" />;
+      return (
+        <div className="flex items-center gap-1">
+          <TrendingDown className="w-3 h-3 text-red-500 inline" />
+          <span className="text-red-600 text-xs">{growth.toFixed(1)}% vs last {period}</span>
+        </div>
+      );
     }
-    return null;
+    return (
+      <div className="flex items-center gap-1">
+        <span className="text-gray-500 text-xs">{growth.toFixed(1)}% vs last {period}</span>
+      </div>
+    );
   };
   const getPaymentMethodBadge = (method: string) => {
     const color = method.toLowerCase().includes('card') ? 'bg-blue-100 text-blue-800' : method.toLowerCase().includes('cash') ? 'bg-green-100 text-green-800' : method.toLowerCase().includes('digital') ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800';
@@ -235,42 +259,52 @@ export const PaymentMethodMonthOnMonthTable: React.FC<PaymentMethodMonthOnMonthT
 
       <CardContent className="p-0">
         <div className="overflow-x-auto rounded-lg">
-          <table className="min-w-full bg-white border-t border-gray-200 rounded-lg">
-            <thead className="bg-gradient-to-r from-blue-700 to-blue-900 text-white font-semibold text-sm uppercase tracking-wider sticky top-0 z-20">
-              <tr>
-                <th className="text-white font-semibold uppercase tracking-wider px-6 py-3 text-left rounded-tl-lg sticky left-0 bg-blue-800 z-30">Payment Method</th>
-                {monthlyData.map(({
-                key,
-                display
-              }) => <th key={key} className="text-white font-semibold text-xs uppercase tracking-wider px-3 py-2 bg-blue-800 border-l border-blue-600 min-w-32">
-                    <div className="flex flex-col">
-                      <span className="text-sm">{display.split(' ')[0]}</span>
-                      <span className="text-blue-200 text-xs">{display.split(' ')[1]}</span>
-                    </div>
-                  </th>)}
-              </tr>
-            </thead>
-            <tbody>
-              {processedData.map((item, index) => <tr key={item.paymentMethod} className="hover:bg-blue-50 cursor-pointer border-b border-gray-100 transition-colors duration-200" onClick={() => onRowClick(item)}>
-                  <td className="px-6 py-3 text-sm font-medium text-gray-900 sticky left-0 bg-white border-r border-gray-200 min-w-60">
-                    <div className="flex items-center gap-4 min-w-60">
-                      <span className="font-bold text-slate-700">#{index + 1}</span>
-                      {getPaymentMethodBadge(item.paymentMethod)}
-                    </div>
-                  </td>
+            <table className="min-w-full bg-white border-t border-gray-200 rounded-lg">
+              <thead className="bg-gradient-to-r from-blue-700 to-blue-900 text-white font-semibold text-sm uppercase tracking-wider sticky top-0 z-20">
+                <tr>
+                  <th className="text-white font-semibold uppercase tracking-wider px-6 py-3 text-left rounded-tl-lg sticky left-0 bg-blue-800 z-30">Payment Method</th>
+                  <th className="text-white font-semibold text-xs uppercase tracking-wider px-3 py-2 bg-blue-800 min-w-24">Contribution %</th>
                   {monthlyData.map(({
-                key
-              }, monthIndex) => {
-                const current = item.monthlyValues[key] || 0;
-                const previous = monthIndex > 0 ? item.monthlyValues[monthlyData[monthIndex - 1].key] || 0 : 0;
-                return <td key={key} className="px-3 py-3 text-center text-sm text-gray-900 font-mono border-l border-gray-100">
-                        <div className="flex items-center justify-center">
-                          {formatMetricValue(current, selectedMetric)}
-                          {getGrowthIndicator(current, previous)}
-                        </div>
-                      </td>;
-              })}
-                </tr>)}
+                  key,
+                  display
+                }) => <th key={key} className="text-white font-semibold text-xs uppercase tracking-wider px-3 py-2 bg-blue-800 border-l border-blue-600 min-w-32">
+                      <div className="flex flex-col">
+                        <span className="text-sm">{display.split(' ')[0]}</span>
+                        <span className="text-blue-200 text-xs">{display.split(' ')[1]}</span>
+                      </div>
+                    </th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {processedData.map((item, index) => <tr key={item.paymentMethod} className="hover:bg-blue-50 cursor-pointer border-b border-gray-100 transition-colors duration-200" onClick={() => onRowClick(item)}>
+                    <td className="px-6 py-3 text-sm font-medium text-gray-900 sticky left-0 bg-white border-r border-gray-200 min-w-60">
+                      <div className="flex items-center gap-4 min-w-60">
+                        <span className="font-bold text-slate-700">#{index + 1}</span>
+                        {getPaymentMethodBadge(item.paymentMethod)}
+                      </div>
+                    </td>
+                    <td className="px-3 py-3 text-center text-sm text-gray-900 font-mono">
+                      {(item.metricValue / totalsRow.metricValue * 100).toFixed(1)}%
+                    </td>
+                    {monthlyData.map(({
+                  key
+                }, monthIndex) => {
+                  const current = item.monthlyValues[key] || 0;
+                  const previous = monthIndex > 0 ? item.monthlyValues[monthlyData[monthIndex - 1].key] || 0 : 0;
+                  const monthTotal = totalsRow.monthlyValues[key] || 0;
+                  const contribution = monthTotal > 0 ? (current / monthTotal * 100) : 0;
+                  
+                  return <td key={key} className="px-3 py-3 text-center text-sm text-gray-900 font-mono border-l border-gray-100 hover:bg-blue-100 cursor-pointer transition-colors group relative">
+                          <div className="flex flex-col items-center justify-center">
+                            <div>{formatMetricValue(current, selectedMetric)}</div>
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 absolute bg-slate-800 text-white px-2 py-1 rounded text-xs z-40 -mt-8">
+                              {getGrowthIndicator(current, previous)}
+                              {contribution > 0 && <div className="text-blue-200">{contribution.toFixed(1)}% of month</div>}
+                            </div>
+                          </div>
+                        </td>;
+                })}
+                  </tr>)}
               <tr className="bg-gradient-to-r from-blue-50 to-blue-100 border-t-2 border-blue-200 font-bold">
                 <td className="px-6 py-3 text-sm font-bold text-blue-900 sticky left-0 bg-blue-100 border-r border-blue-200">
                   TOTAL

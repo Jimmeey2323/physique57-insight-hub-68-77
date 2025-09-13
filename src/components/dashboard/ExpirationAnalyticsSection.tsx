@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AutoCloseFilterSection } from './AutoCloseFilterSection';
-import { MetricCard } from './MetricCard';
+import { ExpirationMetricCards } from './ExpirationMetricCards';
 import { UnifiedTopBottomSellers } from './UnifiedTopBottomSellers';
 import { ModernDrillDownModal } from './ModernDrillDownModal';
 import { NoteTaker } from '@/components/ui/NoteTaker';
@@ -21,6 +21,10 @@ interface ExpirationAnalyticsSectionProps {
 }
 
 const locations = [{
+  id: 'all',
+  name: 'All Locations',
+  fullName: 'All Locations'
+}, {
   id: 'kwality',
   name: 'Kwality House, Kemps Corner',
   fullName: 'Kwality House, Kemps Corner'
@@ -35,7 +39,7 @@ const locations = [{
 }];
 
 export const ExpirationAnalyticsSection: React.FC<ExpirationAnalyticsSectionProps> = ({ data }) => {
-  const [activeLocation, setActiveLocation] = useState('kwality');
+  const [activeLocation, setActiveLocation] = useState('all');
   const [drillDownData, setDrillDownData] = useState<any>(null);
   const [drillDownType, setDrillDownType] = useState<'expiration' | 'member' | 'status'>('expiration');
 
@@ -58,14 +62,16 @@ export const ExpirationAnalyticsSection: React.FC<ExpirationAnalyticsSectionProp
     let filtered = [...rawData];
 
     // Apply location filter
-    filtered = filtered.filter(item => {
-      const locationMatch = activeLocation === 'kwality' 
-        ? item.homeLocation === 'Kwality House, Kemps Corner' 
-        : activeLocation === 'supreme' 
-        ? item.homeLocation === 'Supreme HQ, Bandra' 
-        : item.homeLocation?.includes('Kenkere') || item.homeLocation === 'Kenkere House';
-      return locationMatch;
-    });
+    if (activeLocation !== 'all') {
+      filtered = filtered.filter(item => {
+        const locationMatch = activeLocation === 'kwality' 
+          ? item.homeLocation === 'Kwality House, Kemps Corner' 
+          : activeLocation === 'supreme' 
+          ? item.homeLocation === 'Supreme HQ, Bandra' 
+          : item.homeLocation?.includes('Kenkere') || item.homeLocation === 'Kenkere House';
+        return locationMatch;
+      });
+    }
 
     // Apply status filter
     if (filters.status?.length) {
@@ -215,7 +221,7 @@ export const ExpirationAnalyticsSection: React.FC<ExpirationAnalyticsSectionProp
 
           {/* Location Tabs */}
           <Tabs value={activeLocation} onValueChange={setActiveLocation} className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               {locations.map(location => (
                 <TabsTrigger 
                   key={location.id} 
@@ -244,20 +250,10 @@ export const ExpirationAnalyticsSection: React.FC<ExpirationAnalyticsSectionProp
                 />
 
                 {/* Metric Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {metrics.map((metric, index) => (
-                     <MetricCard
-                       key={index}
-                       data={metric}
-                       onClick={() => handleRowClick(filteredData.filter(item => {
-                         if (metric.title === 'Active Members') return item.status === 'Active';
-                         if (metric.title === 'Churned Members') return item.status === 'Churned';
-                         if (metric.title === 'Frozen Members') return item.status === 'Frozen';
-                         return true;
-                       }), 'expiration')}
-                     />
-                  ))}
-                </div>
+                <ExpirationMetricCards
+                  data={filteredData}
+                  onMetricClick={(data, type) => handleRowClick(data, 'expiration')}
+                />
 
                 {/* Charts Grid */}
                 <ExpirationChartsGrid data={filteredData} />

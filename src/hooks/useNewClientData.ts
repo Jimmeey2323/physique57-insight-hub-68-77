@@ -15,6 +15,7 @@ export const useNewClientData = () => {
   const [data, setData] = useState<NewClientData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const getAccessToken = async () => {
     try {
@@ -37,6 +38,35 @@ export const useNewClientData = () => {
       console.error('Error getting access token:', error);
       throw error;
     }
+  };
+
+  // Helper to calculate conversion span in days
+  const calculateConversionSpan = (firstVisitDate: string, firstPurchaseDate: string): number => {
+    if (!firstVisitDate || !firstPurchaseDate) return 0;
+    
+    let firstVisit: Date, firstPurchase: Date;
+    
+    // Parse first visit date
+    if (firstVisitDate.includes('/')) {
+      const [day, month, year] = firstVisitDate.split(' ')[0].split('/');
+      firstVisit = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    } else {
+      firstVisit = new Date(firstVisitDate);
+    }
+    
+    // Parse first purchase date  
+    if (firstPurchaseDate.includes('/')) {
+      const [day, month, year] = firstPurchaseDate.split(' ')[0].split('/');
+      firstPurchase = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    } else {
+      firstPurchase = new Date(firstPurchaseDate);
+    }
+    
+    if (isNaN(firstVisit.getTime()) || isNaN(firstPurchase.getTime())) return 0;
+    
+    const diffTime = firstPurchase.getTime() - firstVisit.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return Math.max(0, diffDays);
   };
 
   // Helper to extract monthYear from a date string (YYYY-MM or MMM YYYY)
@@ -63,8 +93,12 @@ export const useNewClientData = () => {
 
   const fetchNewClientData = async () => {
     try {
-      setLoading(true);
+      if (isInitialized) {
+        setLoading(true);
+      }
+      console.log('Fetching new client data from Google Sheets...');
       const accessToken = await getAccessToken();
+      console.log('Access token obtained for new client data');
       
       const response = await fetch(
         `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/New?alt=json`,
@@ -114,7 +148,7 @@ export const useNewClientData = () => {
           period: row[21] || '',
           unique: row[22] || '',
           firstPurchase: row[23] || '',
-          conversionSpan: parseFloat(row[24]) || 0,
+          conversionSpan: calculateConversionSpan(firstVisitDate, row[23] || ''),
           monthYear: getMonthYear(firstVisitDate),
         };
       });
@@ -122,17 +156,21 @@ export const useNewClientData = () => {
       console.log('New client data loaded:', newClientData.length, 'records');
       setData(newClientData);
       setError(null);
+      setIsInitialized(true);
     } catch (err) {
       console.error('Error fetching new client data:', err);
       setError('Failed to load new client data');
+      setIsInitialized(true);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchNewClientData();
-  }, []);
+    if (!isInitialized) {
+      fetchNewClientData();
+    }
+  }, [isInitialized]);
 
   return { data, loading, error, refetch: fetchNewClientData };
 };

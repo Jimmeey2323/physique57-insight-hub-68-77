@@ -24,6 +24,13 @@ export const ClientConversionDataTableSelector: React.FC<ClientConversionDataTab
 }) => {
   const tableOptions: TableOption[] = [
     {
+      key: 'monthonmonthbytype',
+      label: 'By Client Type',
+      description: 'Monthly breakdown by client type',
+      icon: Users,
+      gradient: 'from-purple-500 to-pink-600'
+    },
+    {
       key: 'monthonmonth',
       label: 'Month on Month',
       description: 'Monthly trends and comparisons',
@@ -65,7 +72,7 @@ export const ClientConversionDataTableSelector: React.FC<ClientConversionDataTab
         </Badge>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         {tableOptions.map((option) => (
           <Button
             key={option.key}
