@@ -130,7 +130,7 @@ export const SalesAnimatedMetricCards: React.FC<SalesAnimatedMetricCardsProps> =
                       
                       {/* Growth Indicator - Positioned on right */}
                       <div className={cn(
-                        "flex flex-col items-end gap-1 px-3.5 py-2 rounded-lg text-xs font-bold border transition-all duration-300 shrink-0",
+                        "flex flex-col items-end gap-3 px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-all duration-300 shrink-0",
                         metric.changeDetails?.isSignificant ? "shadow-lg" : "shadow-sm",
                         isPositive ? 
                           "bg-gradient-to-r from-green-50 to-emerald-50 text-green-800 border-green-200" : 
