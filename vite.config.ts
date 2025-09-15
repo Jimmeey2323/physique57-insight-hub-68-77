@@ -20,17 +20,13 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    // Enable source maps for better debugging without performance impact
     sourcemap: false,
-    // Use esbuild for minification (built into Vite, no extra dependency needed)
     minify: 'esbuild',
-    // Enable CSS code splitting
     cssCodeSplit: true,
+    assetsInlineLimit: 0,
     rollupOptions: {
       output: {
-        // Aggressive code splitting for optimal caching
         manualChunks: (id) => {
-          // Vendor chunks
           if (id.includes('node_modules')) {
             if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
               return 'react-vendor';
@@ -56,7 +52,6 @@ export default defineConfig(({ mode }) => ({
             return 'vendor';
           }
           
-          // Dashboard components by feature
           if (id.includes('/components/dashboard/')) {
             if (id.includes('Sales') || id.includes('Revenue')) {
               return 'dashboard-sales';
@@ -85,22 +80,18 @@ export default defineConfig(({ mode }) => ({
             return 'dashboard-misc';
           }
           
-          // UI components
           if (id.includes('/components/ui/')) {
             return 'ui-components';
           }
           
-          // Pages
           if (id.includes('/pages/')) {
             return 'pages';
           }
           
-          // Hooks and utilities
           if (id.includes('/hooks/') || id.includes('/utils/')) {
             return 'utils';
           }
         },
-        // Optimize chunk naming for better caching
         chunkFileNames: (chunkInfo) => {
           const name = chunkInfo.name || 'chunk';
           return `assets/${name}-[hash].js`;
@@ -108,24 +99,16 @@ export default defineConfig(({ mode }) => ({
         entryFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash].[ext]',
       },
-      // External dependencies that should not be bundled
-      external: (id) => {
-        // Keep all dependencies bundled for better performance in production
-        return false;
-      }
     },
-    // Optimize chunk size limits
     chunkSizeWarningLimit: 1000,
-    // Enable compression
     reportCompressedSize: true,
-    // Target modern browsers for better performance
-    target: 'esnext',
+    target: 'es2015',
   },
-  // Enhanced performance optimizations
   optimizeDeps: {
     include: [
       'react',
       'react-dom',
+      'react/jsx-runtime',
       'react-router-dom',
       'recharts',
       'date-fns',
@@ -139,14 +122,10 @@ export default defineConfig(({ mode }) => ({
       '@radix-ui/react-popover',
       '@tanstack/react-query'
     ],
-    // Force optimization of these deps
     force: true,
   },
-  // Enable experimental features for better performance
   esbuild: {
-    // Drop console logs in production
     drop: mode === 'production' ? ['console', 'debugger'] : [],
-    // Enable tree shaking
     treeShaking: true,
   }
 }));

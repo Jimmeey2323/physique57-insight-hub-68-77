@@ -14,17 +14,30 @@ export const ClientConversionMetricCards: React.FC<ClientConversionMetricCardsPr
   // Calculate comprehensive metrics
   const totalClients = data.length;
   
-  // Count new members - only when isNew contains "New" (case insensitive)
+  // Debug: log the data to understand the structure
+  console.log('ClientConversionMetricCards data sample:', data.slice(0, 3));
+  console.log('Unique isNew values:', [...new Set(data.map(client => client.isNew))]);
+  console.log('Unique conversionStatus values:', [...new Set(data.map(client => client.conversionStatus))]);
+  console.log('Unique retentionStatus values:', [...new Set(data.map(client => client.retentionStatus))]);
+  
+  // Count new members - unique memberIds where isNew contains "new"
   const newMembers = data.filter(client => {
     const isNewValue = String(client.isNew || '').toLowerCase();
     return isNewValue.includes('new');
   }).length;
   
-  const convertedMembers = data.filter(client => client.conversionStatus === 'Converted').length;
-  const retainedMembers = data.filter(client => client.retentionStatus === 'Retained').length;
+  // Count converted members - when conversionStatus = 'Converted' (exact match)
+  const convertedMembers = data.filter(client => 
+    client.conversionStatus === 'Converted'
+  ).length;
   
-  // Corrected: trials completed = clients who actually completed trials (visits post trial > 0)
-  const trialsCompleted = data.filter(client => (client.visitsPostTrial || 0) > 0).length;
+  // Count retained members - when retentionStatus = 'Retained' (exact match)  
+  const retainedMembers = data.filter(client => 
+    client.retentionStatus === 'Retained'
+  ).length;
+  
+  // Count trials completed - unique memberIds count (all clients who have data)
+  const trialsCompleted = data.length;
   
   // Lead to trial conversion: clients who tried vs total new members
   const leadToTrialConversion = newMembers > 0 ? (trialsCompleted / newMembers) * 100 : 0;
@@ -35,18 +48,19 @@ export const ClientConversionMetricCards: React.FC<ClientConversionMetricCardsPr
   // Overall conversion rate: Converted from new members only
   const overallConversionRate = newMembers > 0 ? (convertedMembers / newMembers) * 100 : 0;
   
-  // Retention rate: retained from converted members
-  const retentionRate = convertedMembers > 0 ? (retainedMembers / convertedMembers) * 100 : 0;
+  // Retention rate: retained from new members (not converted members)
+  const retentionRate = newMembers > 0 ? (retainedMembers / newMembers) * 100 : 0;
   
   const totalLTV = data.reduce((sum, client) => sum + (client.ltv || 0), 0);
   const avgLTV = totalClients > 0 ? totalLTV / totalClients : 0;
   
-  // Calculate average conversion time from clients who converted
+  // Calculate average conversion time using conversionSpan field
   const convertedClientsWithTime = data.filter(client => 
-    client.conversionStatus === 'Converted' && (client.conversionSpan || 0) > 0
+    client.conversionStatus === 'Converted' && client.conversionSpan && client.conversionSpan > 0
   );
+  
   const avgConversionTime = convertedClientsWithTime.length > 0 
-    ? convertedClientsWithTime.reduce((sum, client) => sum + (client.conversionSpan || 0), 0) / convertedClientsWithTime.length 
+    ? convertedClientsWithTime.reduce((sum, client) => sum + client.conversionSpan, 0) / convertedClientsWithTime.length 
     : 0;
 
   const metrics = [
@@ -62,8 +76,8 @@ export const ClientConversionMetricCards: React.FC<ClientConversionMetricCardsPr
       period: "vs last month",
       metricType: 'new_members',
       filterData: () => data.filter(client => {
-        const isNewValue = String(client.isNew || '');
-        return isNewValue.includes('New');
+        const isNewValue = String(client.isNew || '').toLowerCase();
+        return isNewValue.includes('new');
       })
     },
     {
@@ -117,7 +131,7 @@ export const ClientConversionMetricCards: React.FC<ClientConversionMetricCardsPr
       change: '+3.1%',
       isPositive: true,
       metricType: 'retention_rate',
-      filterData: () => data.filter(client => client.conversionStatus === 'Converted' || client.retentionStatus === 'Retained')
+      filterData: () => data.filter(client => client.retentionStatus === 'Retained')
     },
     {
       title: 'Avg LTV',
@@ -140,7 +154,7 @@ export const ClientConversionMetricCards: React.FC<ClientConversionMetricCardsPr
       isPositive: true,
       metricType: 'avg_conv_time',
       filterData: () => data.filter(client => 
-        client.conversionStatus === 'Converted' && (client.conversionSpan || 0) > 0
+        client.conversionStatus === 'Converted' && client.firstPurchase && client.firstVisitDate
       )
     },
     {
@@ -157,52 +171,59 @@ export const ClientConversionMetricCards: React.FC<ClientConversionMetricCardsPr
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {metrics.map((metric, index) => (
         <Card 
           key={metric.title} 
-          className="group relative overflow-hidden bg-white border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer"
+          className="group relative overflow-hidden bg-white border border-slate-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer"
           onClick={() => onCardClick?.(metric.title, metric.filterData(), metric.metricType)}
+          style={{ backgroundColor: 'white' }} // Force white background
         >
-          {/* Animated gradient background */}
-          <div className={`absolute inset-0 bg-gradient-to-br ${metric.gradient} opacity-5 group-hover:opacity-10 transition-opacity duration-300`}></div>
+          {/* Clean white background with subtle gradient accent */}
+          <div className={`absolute inset-0 bg-gradient-to-br ${metric.gradient} opacity-3 group-hover:opacity-8 transition-opacity duration-300`}></div>
           
-          <CardContent className="relative p-4 z-10">
-            <div className="flex items-center justify-between mb-3">
-              <div className={`p-2 rounded-lg bg-gradient-to-r ${metric.gradient} shadow-md group-hover:shadow-lg transition-all duration-300`}>
-                <metric.icon className="w-5 h-5 text-white" />
+          <CardContent className="relative p-6 z-10 bg-white" style={{ backgroundColor: 'white', color: '#1e293b' }}>
+            <div className="flex items-center justify-between mb-4">
+              <div className={`p-3 rounded-xl bg-gradient-to-br ${metric.gradient} shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                <metric.icon className="w-6 h-6 text-white" />
               </div>
               <div className="text-right">
                 <Badge 
-                  className={`text-xs px-2 py-1 font-medium transition-all duration-300 mb-1 ${
+                  className={`text-xs px-3 py-1 font-medium transition-all duration-300 mb-1 ${
                     metric.isPositive 
-                      ? 'bg-emerald-100 text-emerald-700 group-hover:bg-emerald-200' 
-                      : 'bg-red-100 text-red-700 group-hover:bg-red-200'
+                      ? 'bg-green-100 text-green-800 border-green-200 group-hover:bg-green-200' 
+                      : 'bg-red-100 text-red-800 border-red-200 group-hover:bg-red-200'
                   }`}
                 >
-                  {metric.isPositive ? '+' : ''}{metric.change}%
+                  {metric.isPositive ? '+' : ''}{metric.change}
                 </Badge>
                 {metric.previousValue && (
-                  <div className="text-xs text-gray-500">
-                    <div>Last: {metric.previousValue}</div>
-                    <div className="text-xs">{metric.period}</div>
+                  <div className="text-xs text-slate-500 mt-1">
+                    <div>From: {metric.previousValue}</div>
+                    <div className="text-xs opacity-75">{metric.period}</div>
                   </div>
                 )}
               </div>
             </div>
             
-            <div className="space-y-2">
-              <h3 className="text-xs font-semibold text-gray-700 group-hover:text-gray-800 transition-colors">
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-slate-700 group-hover:text-slate-800 transition-colors" style={{ color: '#334155' }}>
                 {metric.title}
               </h3>
-              <p className={`text-2xl font-bold text-transparent bg-gradient-to-r ${metric.gradient} bg-clip-text group-hover:scale-105 transition-transform duration-300`}>
-                {metric.value}
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-bold text-slate-900 group-hover:text-slate-800 transition-colors" style={{ color: '#0f172a' }}>
+                  {metric.value}
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 group-hover:text-slate-600 transition-colors leading-relaxed" style={{ color: '#64748b' }}>
+                {metric.description}
               </p>
-              <div className="flex items-center gap-1">
-                <div className={`w-1 h-1 rounded-full bg-gradient-to-r ${metric.gradient} animate-pulse`}></div>
-                <p className="text-xs text-gray-500 group-hover:text-gray-600 transition-colors">
-                  {metric.description}
-                </p>
+              
+              <div className="pt-3 border-t border-slate-100">
+                <div className="flex items-center justify-between">
+                  <div className={`flex-1 h-1 bg-gradient-to-r ${metric.gradient} rounded-full opacity-30 group-hover:opacity-50 transition-opacity`} />
+                  <ArrowRight className="w-4 h-4 text-slate-400 ml-3 group-hover:text-slate-600 transition-colors" />
+                </div>
               </div>
             </div>
           </CardContent>

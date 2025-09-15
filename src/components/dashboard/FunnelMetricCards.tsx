@@ -137,23 +137,23 @@ export const FunnelMetricCards: React.FC<FunnelMetricCardsProps> = ({ data, onCa
                 color.replace('from-', 'bg-gradient-to-br from-').replace('to-', 'to-')
               )} />
               
-              {/* Floating particles effect */}
-              <div className="absolute inset-0 overflow-hidden">
+              {/* Floating particles effect - Fixed glitching */}
+              <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <div className={cn(
                   "absolute w-2 h-2 rounded-full opacity-20 transition-all duration-1000",
-                  isHovered ? "animate-bounce" : "",
+                  isHovered ? "animate-bounce" : "transform translate-y-0",
                   color.replace('from-', 'bg-').split(' ')[0].replace('-400', '-300')
-                )} style={{ top: '20%', left: '80%', animationDelay: '0s' }} />
+                )} style={{ top: '20%', left: '80%', animationDelay: isHovered ? '0s' : 'unset' }} />
                 <div className={cn(
                   "absolute w-1 h-1 rounded-full opacity-30 transition-all duration-1000",
-                  isHovered ? "animate-pulse" : "",
+                  isHovered ? "animate-pulse" : "opacity-20",
                   color.replace('to-', 'bg-').split(' ')[1].replace('-600', '-400')
-                )} style={{ top: '60%', left: '15%', animationDelay: '0.5s' }} />
+                )} style={{ top: '60%', left: '15%', animationDelay: isHovered ? '0.5s' : 'unset' }} />
                 <div className={cn(
                   "absolute w-1.5 h-1.5 rounded-full opacity-25 transition-all duration-1000",
-                  isHovered ? "animate-ping" : "",
+                  isHovered ? "animate-ping" : "opacity-15",
                   color.replace('from-', 'bg-').split(' ')[0].replace('-400', '-200')
-                )} style={{ top: '80%', left: '70%', animationDelay: '1s' }} />
+                )} style={{ top: '80%', left: '70%', animationDelay: isHovered ? '1s' : 'unset' }} />
               </div>
               
               <CardContent className="p-6 relative z-10">

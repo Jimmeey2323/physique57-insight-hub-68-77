@@ -1,11 +1,11 @@
 import React, { useMemo } from 'react';
-import { ClassAttendanceSection } from '@/components/dashboard/ClassAttendanceSection';
+import { UpdatedEnhancedClassAttendanceSection } from '@/components/dashboard/UpdatedEnhancedClassAttendanceSection';
 import { Footer } from '@/components/ui/footer';
 import { SessionsFiltersProvider } from '@/contexts/SessionsFiltersContext';
 import { ModernHeroSection } from '@/components/ui/ModernHeroSection';
 import { useSessionsData } from '@/hooks/useSessionsData';
 import { useFilteredSessionsData } from '@/hooks/useFilteredSessionsData';
-import { formatNumber } from '@/utils/formatters';
+import { formatNumber, formatCurrency } from '@/utils/formatters';
 
 const ClassAttendanceContent = () => {
   const { data } = useSessionsData();
@@ -14,27 +14,46 @@ const ClassAttendanceContent = () => {
   const heroMetrics = useMemo(() => {
     if (!filteredData || filteredData.length === 0) return [];
 
-    const locations = [
-      { key: 'Kwality House, Kemps Corner', name: 'Kwality' },
-      { key: 'Supreme HQ, Bandra', name: 'Supreme' },
-      { key: 'Kenkere House', name: 'Kenkere' }
-    ];
+    // Calculate comprehensive metrics based on filtered data
+    const totalSessions = filteredData.length;
+    const totalAttendance = filteredData.reduce((sum, session) => sum + (session.checkedInCount || 0), 0);
+    const totalCapacity = filteredData.reduce((sum, session) => sum + (session.capacity || 0), 0);
+    const totalRevenue = filteredData.reduce((sum, session) => sum + (session.totalPaid || 0), 0);
+    
+    const fillRate = totalCapacity > 0 ? (totalAttendance / totalCapacity) * 100 : 0;
+    const classAverage = totalSessions > 0 ? totalAttendance / totalSessions : 0;
+    
+    // Get unique locations for location-specific metrics
+    const uniqueLocations = [...new Set(filteredData.map(item => item.location))].filter(Boolean);
+    const uniqueClasses = [...new Set(filteredData.map(item => item.cleanedClass))].filter(Boolean);
+    const uniqueTrainers = [...new Set(filteredData.map(item => item.trainerName))].filter(Boolean);
 
-    return locations.map(location => {
-      const locationData = filteredData.filter(item => 
-        location.key === 'Kenkere House' 
-          ? item.location?.includes('Kenkere') || item.location === 'Kenkere House'
-          : item.location === location.key
-      );
-      
-      const totalSessions = locationData.length;
-      
-      return {
-        location: location.name,
-        label: 'Filtered Sessions',
-        value: formatNumber(totalSessions)
-      };
-    });
+    return [
+      {
+        location: 'Sessions',
+        label: 'Total Sessions',
+        value: formatNumber(totalSessions),
+        subValue: `${uniqueClasses.length} classes`
+      },
+      {
+        location: 'Attendance', 
+        label: 'Total Attendance',
+        value: formatNumber(totalAttendance),
+        subValue: `${formatNumber(classAverage)} avg/class`
+      },
+      {
+        location: 'Revenue',
+        label: 'Earned Revenue', 
+        value: formatCurrency(totalRevenue),
+        subValue: `${formatCurrency(totalRevenue / totalSessions)} avg/session`
+      },
+      {
+        location: 'Coverage',
+        label: 'Locations & Trainers',
+        value: `${uniqueLocations.length} locations`,
+        subValue: `${uniqueTrainers.length} trainers`
+      }
+    ];
   }, [filteredData]);
 
   return (
@@ -48,7 +67,7 @@ const ClassAttendanceContent = () => {
       />
 
       <div className="container mx-auto px-6 py-8">
-        <ClassAttendanceSection />
+        <UpdatedEnhancedClassAttendanceSection />
       </div>
       
       <Footer />

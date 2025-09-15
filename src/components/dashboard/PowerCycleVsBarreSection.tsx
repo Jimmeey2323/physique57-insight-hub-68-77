@@ -14,7 +14,6 @@ import { ModernDrillDownModal } from './ModernDrillDownModal';
 import { SourceDataModal } from '@/components/ui/SourceDataModal';
 import { PowerCycleBarreStrengthComprehensiveSection } from './PowerCycleBarreStrengthComprehensiveSection';
 import { usePayrollData } from '@/hooks/usePayrollData';
-import { RefinedLoader } from '@/components/ui/RefinedLoader';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { TrendingUp, BarChart3, Activity, Users, Eye, Zap } from 'lucide-react';
 

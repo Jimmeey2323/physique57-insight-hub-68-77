@@ -76,9 +76,11 @@ export const parseDate = (dateString: string): Date | null => {
   if (!dateString || dateString.trim() === '') return null;
   
   try {
-    // Handle DD/MM/YYYY format
+    // Handle DD/MM/YYYY format with optional time (e.g., "14/09/2025 10:00:00")
     if (dateString.includes('/')) {
-      const parts = dateString.split('/');
+      // Split by space to separate date and time, take only date part
+      const datePart = dateString.split(' ')[0].trim();
+      const parts = datePart.split('/');
       if (parts.length === 3) {
         const day = parseInt(parts[0]);
         const month = parseInt(parts[1]);

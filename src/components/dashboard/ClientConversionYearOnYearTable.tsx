@@ -8,15 +8,39 @@ import { ModernDataTable } from '@/components/ui/ModernDataTable';
 
 interface ClientConversionYearOnYearTableProps {
   data: NewClientData[];
+  visitsSummary?: Record<string, number>;
   onRowClick?: (monthData: any) => void;
 }
 
-export const ClientConversionYearOnYearTable: React.FC<ClientConversionYearOnYearTableProps> = ({ data, onRowClick }) => {
+export const ClientConversionYearOnYearTable: React.FC<ClientConversionYearOnYearTableProps> = ({ data, visitsSummary, onRowClick }) => {
   const yearOnYearData = React.useMemo(() => {
     const currentYear = new Date().getFullYear();
     const previousYear = currentYear - 1;
 
-    const monthlyStats = data.reduce((acc, client) => {
+    // Generate all 12 months regardless of data
+    const allMonths = Array.from({ length: 12 }, (_, i) => {
+      const monthNumber = i + 1;
+      const monthName = new Date(2024, i).toLocaleDateString('en-US', { month: 'short' });
+      return {
+        monthName,
+        monthNumber,
+        key: monthName
+      };
+    });
+
+    // Initialize all months with empty data
+    const monthlyStats = allMonths.reduce((acc, month) => {
+      acc[month.key] = {
+        month: month.monthName,
+        sortOrder: month.monthNumber,
+        currentYear: { totalMembers: 0, visits: 0, newMembers: 0, converted: 0, retained: 0, totalLTV: 0, clients: [] },
+        previousYear: { totalMembers: 0, visits: 0, newMembers: 0, converted: 0, retained: 0, totalLTV: 0, clients: [] }
+      };
+      return acc;
+    }, {} as Record<string, any>);
+
+    // Process actual data into the pre-initialized months
+    data.forEach(client => {
       const dateStr = client.firstVisitDate;
       let date: Date;
       
@@ -39,24 +63,14 @@ export const ClientConversionYearOnYearTable: React.FC<ClientConversionYearOnYea
         date = new Date(dateStr);
       }
       
-      if (isNaN(date.getTime())) return acc;
+      if (isNaN(date.getTime())) return;
       
       const year = date.getFullYear();
       const month = date.getMonth() + 1;
       const monthName = date.toLocaleDateString('en-US', { month: 'short' });
       
-      if (year === currentYear || year === previousYear) {
-        const key = `${monthName}`;
-        if (!acc[key]) {
-          acc[key] = {
-            month: monthName,
-            sortOrder: month,
-            currentYear: { totalMembers: 0, newMembers: 0, converted: 0, retained: 0, totalLTV: 0, clients: [] },
-            previousYear: { totalMembers: 0, newMembers: 0, converted: 0, retained: 0, totalLTV: 0, clients: [] }
-          };
-        }
-        
-        const yearData = year === currentYear ? acc[key].currentYear : acc[key].previousYear;
+      if ((year === currentYear || year === previousYear) && monthlyStats[monthName]) {
+        const yearData = year === currentYear ? monthlyStats[monthName].currentYear : monthlyStats[monthName].previousYear;
         yearData.totalMembers++;
         yearData.clients.push(client);
         
@@ -77,22 +91,38 @@ export const ClientConversionYearOnYearTable: React.FC<ClientConversionYearOnYea
         
         yearData.totalLTV += client.ltv || 0;
       }
-      
-      return acc;
-    }, {} as Record<string, any>);
+    });
+
+    // Populate visits data from visitsSummary
+    if (visitsSummary) {
+      Object.values(monthlyStats).forEach((stat: any) => {
+        const currentYear = new Date().getFullYear();
+        const previousYear = currentYear - 1;
+        
+        // Format: "Jan 2024", "Jan 2023", etc.
+        const currentYearKey = `${stat.month} ${currentYear}`;
+        const previousYearKey = `${stat.month} ${previousYear}`;
+        
+        stat.currentYear.visits = visitsSummary[currentYearKey] || 0;
+        stat.previousYear.visits = visitsSummary[previousYearKey] || 0;
+      });
+    }
 
     return Object.values(monthlyStats)
       .map((stat: any) => {
         const currentConversionRate = stat.currentYear.newMembers > 0 ? (stat.currentYear.converted / stat.currentYear.newMembers) * 100 : 0;
         const previousConversionRate = stat.previousYear.newMembers > 0 ? (stat.previousYear.converted / stat.previousYear.newMembers) * 100 : 0;
-        const currentRetentionRate = stat.currentYear.converted > 0 ? (stat.currentYear.retained / stat.currentYear.converted) * 100 : 0;
-        const previousRetentionRate = stat.previousYear.converted > 0 ? (stat.previousYear.retained / stat.previousYear.converted) * 100 : 0;
+        const currentRetentionRate = stat.currentYear.newMembers > 0 ? (stat.currentYear.retained / stat.currentYear.newMembers) * 100 : 0;
+        const previousRetentionRate = stat.previousYear.newMembers > 0 ? (stat.previousYear.retained / stat.previousYear.newMembers) * 100 : 0;
         const currentAvgLTV = stat.currentYear.totalMembers > 0 ? stat.currentYear.totalLTV / stat.currentYear.totalMembers : 0;
         const previousAvgLTV = stat.previousYear.totalMembers > 0 ? stat.previousYear.totalLTV / stat.previousYear.totalMembers : 0;
 
         return {
           month: stat.month,
           sortOrder: stat.sortOrder,
+          currentVisits: stat.currentYear.visits,
+          previousVisits: stat.previousYear.visits,
+          visitsGrowth: stat.previousYear.visits > 0 ? ((stat.currentYear.visits - stat.previousYear.visits) / stat.previousYear.visits) * 100 : 0,
           currentTotalMembers: stat.currentYear.totalMembers,
           previousTotalMembers: stat.previousYear.totalMembers,
           totalMembersGrowth: stat.previousYear.totalMembers > 0 ? ((stat.currentYear.totalMembers - stat.previousYear.totalMembers) / stat.previousYear.totalMembers) * 100 : 0,
@@ -129,19 +159,19 @@ export const ClientConversionYearOnYearTable: React.FC<ClientConversionYearOnYea
     },
     {
       key: 'currentTotalMembers' as const,
-      header: `${new Date().getFullYear()} Total`,
+      header: `${new Date().getFullYear()} Trials`,
       align: 'center' as const,
       render: (value: number) => <span className="text-base font-bold text-blue-600">{formatNumber(value)}</span>
     },
     {
       key: 'previousTotalMembers' as const,
-      header: `${new Date().getFullYear() - 1} Total`,
+      header: `${new Date().getFullYear() - 1} Trials`,
       align: 'center' as const,
       render: (value: number) => <span className="text-base font-bold text-slate-600">{formatNumber(value)}</span>
     },
     {
       key: 'totalMembersGrowth' as const,
-      header: 'Total Growth %',
+      header: 'Trials Growth %',
       align: 'center' as const,
       render: (value: number) => (
         <span className={`text-base font-bold ${(value || 0) > 0 ? 'text-green-600' : (value || 0) < 0 ? 'text-red-600' : 'text-slate-600'}`}>
@@ -151,19 +181,19 @@ export const ClientConversionYearOnYearTable: React.FC<ClientConversionYearOnYea
     },
     {
       key: 'currentNewMembers' as const,
-      header: `${new Date().getFullYear()} New`,
+      header: `${new Date().getFullYear()} New Members`,
       align: 'center' as const,
       render: (value: number) => <span className="text-base font-bold text-green-600">{formatNumber(value)}</span>
     },
     {
       key: 'previousNewMembers' as const,
-      header: `${new Date().getFullYear() - 1} New`,
+      header: `${new Date().getFullYear() - 1} New Members`,
       align: 'center' as const,
       render: (value: number) => <span className="text-base font-bold text-slate-600">{formatNumber(value)}</span>
     },
     {
       key: 'newMembersGrowth' as const,
-      header: 'Growth %',
+      header: 'New Members Growth %',
       align: 'center' as const,
       render: (value: number) => (
         <span className={`text-base font-bold ${(value || 0) > 0 ? 'text-green-600' : (value || 0) < 0 ? 'text-red-600' : 'text-slate-600'}`}>
@@ -173,19 +203,19 @@ export const ClientConversionYearOnYearTable: React.FC<ClientConversionYearOnYea
     },
     {
       key: 'currentConversionRate' as const,
-      header: `${new Date().getFullYear()} Conv.`,
+      header: `${new Date().getFullYear()} Conversion %`,
       align: 'center' as const,
       render: (value: number) => <span className="text-base font-bold text-green-600">{(value || 0).toFixed(1)}%</span>
     },
     {
       key: 'previousConversionRate' as const,
-      header: `${new Date().getFullYear() - 1} Conv.`,
+      header: `${new Date().getFullYear() - 1} Conversion %`,
       align: 'center' as const,
       render: (value: number) => <span className="text-base font-bold text-slate-600">{(value || 0).toFixed(1)}%</span>
     },
     {
       key: 'conversionRateGrowth' as const,
-      header: 'Conv. Δ',
+      header: 'Conv. Growth',
       align: 'center' as const,
       render: (value: number) => (
         <span className={`text-base font-bold ${(value || 0) > 0 ? 'text-green-600' : (value || 0) < 0 ? 'text-red-600' : 'text-slate-600'}`}>
@@ -195,19 +225,19 @@ export const ClientConversionYearOnYearTable: React.FC<ClientConversionYearOnYea
     },
     {
       key: 'currentAvgLTV' as const,
-      header: `${new Date().getFullYear()} LTV`,
+      header: `${new Date().getFullYear()} Avg LTV`,
       align: 'right' as const,
       render: (value: number) => <span className="text-base font-bold text-purple-600">{formatCurrency(value || 0)}</span>
     },
     {
       key: 'previousAvgLTV' as const,
-      header: `${new Date().getFullYear() - 1} LTV`,
+      header: `${new Date().getFullYear() - 1} Avg LTV`,
       align: 'right' as const,
       render: (value: number) => <span className="text-base font-bold text-slate-600">{formatCurrency(value || 0)}</span>
     },
     {
       key: 'avgLTVGrowth' as const,
-      header: 'LTV Growth',
+      header: 'LTV Growth %',
       align: 'center' as const,
       render: (value: number) => (
         <span className={`text-base font-bold ${(value || 0) > 0 ? 'text-green-600' : (value || 0) < 0 ? 'text-red-600' : 'text-slate-600'}`}>

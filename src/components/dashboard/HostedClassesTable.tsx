@@ -27,6 +27,17 @@ export const HostedClassesTable: React.FC<HostedClassesTableProps> = ({ data }) 
 
     return data
       .filter(session => {
+        // First filter for hosted classes - check if class name contains hosted keywords
+        const className = (session.sessionName || session.cleanedClass || '').toLowerCase();
+        const isHostedClass = className.includes('host') || 
+                             className.includes('hosted') || 
+                             className.includes('sign') || 
+                             className.includes('x') || 
+                             className.includes('link') || 
+                             className.includes('influencer');
+        
+        if (!isHostedClass) return false;
+
         // Search filter
         const matchesSearch = !searchTerm || 
           session.sessionName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -74,9 +85,20 @@ export const HostedClassesTable: React.FC<HostedClassesTableProps> = ({ data }) 
   const stats = useMemo(() => {
     if (!data || data.length === 0) return null;
 
-    const totalSessions = data.length;
-    const totalAttendance = data.reduce((sum, session) => sum + (session.checkedInCount || 0), 0);
-    const totalRevenue = data.reduce((sum, session) => sum + (session.totalPaid || 0), 0);
+    // Filter for hosted classes first
+    const hostedClasses = data.filter(session => {
+      const className = (session.sessionName || session.cleanedClass || '').toLowerCase();
+      return className.includes('host') || 
+             className.includes('hosted') || 
+             className.includes('sign') || 
+             className.includes('x') || 
+             className.includes('link') || 
+             className.includes('influencer');
+    });
+
+    const totalSessions = hostedClasses.length;
+    const totalAttendance = hostedClasses.reduce((sum, session) => sum + (session.checkedInCount || 0), 0);
+    const totalRevenue = hostedClasses.reduce((sum, session) => sum + (session.totalPaid || 0), 0);
     const avgAttendance = totalSessions > 0 ? Math.round(totalAttendance / totalSessions) : 0;
 
     return {

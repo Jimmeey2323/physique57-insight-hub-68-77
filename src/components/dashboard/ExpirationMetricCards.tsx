@@ -25,6 +25,15 @@ export const ExpirationMetricCards: React.FC<ExpirationMetricCardsProps> = ({
     const activeRate = totalMemberships > 0 ? (activeCount / totalMemberships) * 100 : 0;
     const frozenRate = totalMemberships > 0 ? (frozenCount / totalMemberships) * 100 : 0;
 
+    // Calculate revenue impact from churned members
+    const paidChurnedMembers = data.filter(item => item.status === 'Churned' && item.paid && item.paid !== '-');
+    const churnedRevenueLoss = paidChurnedMembers.length > 0 
+      ? paidChurnedMembers.reduce((sum, member) => {
+          const paid = parseFloat(member.paid?.toString().replace(/[^0-9.-]/g, '') || '0');
+          return sum + (isNaN(paid) ? 0 : paid);
+        }, 0)
+      : 0;
+
     return [
       {
         title: 'Total Memberships',
@@ -61,6 +70,15 @@ export const ExpirationMetricCards: React.FC<ExpirationMetricCardsProps> = ({
         calculation: 'Count of frozen status',
         icon: 'Clock',
         rawValue: frozenCount
+      },
+      {
+        title: 'Revenue Impact',
+        value: `₹${formatNumber(churnedRevenueLoss)}`,
+        change: 0,
+        description: `Loss from ${paidChurnedMembers.length} churned members`,
+        calculation: 'Sum of paid amounts for churned members',
+        icon: 'TrendingUp',
+        rawValue: churnedRevenueLoss
       }
     ];
   };
@@ -82,7 +100,8 @@ export const ExpirationMetricCards: React.FC<ExpirationMetricCardsProps> = ({
       'from-blue-500 to-blue-600',
       'from-green-500 to-green-600',
       'from-red-500 to-red-600',
-      'from-yellow-500 to-yellow-600'
+      'from-yellow-500 to-yellow-600',
+      'from-purple-500 to-purple-600'
     ];
     return variants[index] || 'from-slate-500 to-slate-600';
   };
@@ -95,7 +114,7 @@ export const ExpirationMetricCards: React.FC<ExpirationMetricCardsProps> = ({
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
       {metrics.map((metric, index) => {
         const IconComponent = getIconComponent(metric.icon);
         const gradient = getCardVariant(metric, index);
@@ -119,7 +138,7 @@ export const ExpirationMetricCards: React.FC<ExpirationMetricCardsProps> = ({
                   <IconComponent className="w-6 h-6 text-white" />
                 </div>
                 <Badge className="bg-white/20 text-white border-0 backdrop-blur-sm">
-                  {index === 0 ? 'Total' : index === 1 ? 'Active' : index === 2 ? 'Churned' : 'Frozen'}
+                  {index === 0 ? 'Total' : index === 1 ? 'Active' : index === 2 ? 'Churned' : index === 3 ? 'Frozen' : 'Revenue'}
                 </Badge>
               </div>
 

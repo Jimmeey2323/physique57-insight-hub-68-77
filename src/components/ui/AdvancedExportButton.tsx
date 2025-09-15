@@ -110,7 +110,7 @@ export const AdvancedExportButton: React.FC<AdvancedExportButtonProps> = ({
   };
   return <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
-        <Button variant={variant} size={size} className="gap-2 font-semibold bg-purple-950 hover:bg-purple-800 text-base rounded-2xl text-violet-50 text-center">
+        <Button variant={variant} size={size} className="gap-2 font-semibold bg-transparent hover:bg-white/10 text-base rounded-2xl text-purple-300 hover:text-purple-200 border border-purple-300/30 hover:border-purple-200/50 backdrop-blur-sm transition-all duration-300 ease-out hover:shadow-lg hover:shadow-purple-500/20">
           <Download className="w-4 h-4" />
           Export All Data
         </Button>

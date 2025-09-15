@@ -1,332 +1,378 @@
-
 import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ModernDataTable } from '@/components/ui/ModernDataTable';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, BarChart3 } from 'lucide-react';
-import { LeadsData } from '@/types/leads';
-import { formatNumber, formatCurrency, formatPercentage } from '@/utils/formatters';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { 
+  TrendingUp, 
+  TrendingDown, 
+  Minus, 
+  ChevronDown, 
+  ChevronUp,
+  BarChart3,
+  Eye,
+  Calendar,
+  Filter
+} from 'lucide-react';
 
 interface FunnelMonthOnMonthTableProps {
-  data: LeadsData[];
-  onDrillDown?: (title: string, data: LeadsData[], type: string) => void;
+  data: any[];
 }
 
-type MetricType = 'totalLeads' | 'trialsCompleted' | 'trialsScheduled' | 'proximityIssues' | 'convertedLeads' | 'trialToMemberRate' | 'leadToTrialRate' | 'leadToMemberRate' | 'ltv' | 'avgVisits' | 'pipelineHealth';
+const FunnelMonthOnMonthTable: React.FC<FunnelMonthOnMonthTableProps> = ({ data }) => {
+  const [sortBy, setSortBy] = useState<'source' | 'total' | 'recent'>('total');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [showDetails, setShowDetails] = useState<string | null>(null);
+  const [visibleSources, setVisibleSources] = useState<number>(8);
 
-export const FunnelMonthOnMonthTable: React.FC<FunnelMonthOnMonthTableProps> = ({ data, onDrillDown }) => {
-  const [selectedMetric, setSelectedMetric] = useState<MetricType>('totalLeads');
-
-  // Generate months from current month back to Jan 2024
-  const generateMonths = () => {
-    const months = [];
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-    
-    // Start from current month and go back to Jan 2024
-    for (let year = currentYear; year >= 2024; year--) {
-      const startMonth = year === currentYear ? currentMonth : 11;
-      const endMonth = year === 2024 ? 0 : 0;
-      
-      for (let month = startMonth; month >= endMonth; month--) {
-        const monthKey = `${year}-${(month + 1).toString().padStart(2, '0')}`;
-        const monthName = new Date(year, month).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-        months.push({ key: monthKey, name: monthName, year, month: month + 1 });
-      }
+  const handleSort = (column: 'source' | 'total' | 'recent') => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(column);
+      setSortOrder('desc');
     }
-    
-    return months;
   };
 
-  const months = generateMonths();
+  const formatNumber = (num: number) => {
+    return new Intl.NumberFormat().format(num);
+  };
 
-  // Process data by source and month
+  const formatPercentage = (num: number) => {
+    return `${num >= 0 ? '+' : ''}${num.toFixed(1)}%`;
+  };
+
+  const getGrowthIcon = (growth: number) => {
+    if (growth > 0) return <TrendingUp className="w-3 h-3 text-green-500" />;
+    if (growth < 0) return <TrendingDown className="w-3 h-3 text-red-500" />;
+    return <Minus className="w-3 h-3 text-gray-400" />;
+  };
+
+  const getGrowthColor = (growth: number) => {
+    if (growth > 10) return 'text-green-600 bg-green-50';
+    if (growth > 0) return 'text-green-600 bg-green-50';
+    if (growth < -10) return 'text-red-600 bg-red-50';
+    if (growth < 0) return 'text-red-600 bg-red-50';
+    return 'text-gray-600 bg-gray-50';
+  };
+
   const processedData = useMemo(() => {
-    if (!data.length) return [];
-
-    // Group by source
-    const sourceData = data.reduce((acc, lead) => {
-      const source = lead.source || 'Unknown';
-      if (!acc[source]) {
-        acc[source] = {};
+    const sourceMap = new Map<string, any>();
+    
+    data.forEach(item => {
+      const source = item.source || 'Unknown';
+      if (!sourceMap.has(source)) {
+        sourceMap.set(source, {
+          source,
+          months: new Map(),
+          total: 0
+        });
       }
       
-      if (lead.createdAt) {
-        const date = new Date(lead.createdAt);
-        const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-        
-        if (!acc[source][monthKey]) {
-          acc[source][monthKey] = {
-            totalLeads: 0,
-            trialsCompleted: 0,
-            trialsScheduled: 0,
-            proximityIssues: 0,
-            convertedLeads: 0,
-            totalLTV: 0,
-            totalVisits: 0
-          };
+      const sourceData = sourceMap.get(source)!;
+      const monthKey = `${item.year}-${String(item.month).padStart(2, '0')}`;
+      
+      sourceData.months.set(monthKey, {
+        leads: item.total_leads || 0,
+        conversions: item.total_conversions || 0,
+        conversionRate: item.conversion_rate || 0
+      });
+      
+      sourceData.total += item.total_leads || 0;
+    });
+
+    return Array.from(sourceMap.values()).map(source => {
+      const monthEntries = Array.from(source.months.entries()).sort();
+      const recentMonth = monthEntries[monthEntries.length - 1];
+      const previousMonth = monthEntries[monthEntries.length - 2];
+      
+      let monthOnMonthGrowth = 0;
+      if (recentMonth && previousMonth) {
+        const recent = recentMonth[1].leads;
+        const previous = previousMonth[1].leads;
+        if (previous > 0) {
+          monthOnMonthGrowth = ((recent - previous) / previous) * 100;
         }
-        
-        const monthData = acc[source][monthKey];
-        monthData.totalLeads += 1;
-        
-        if (lead.stage === 'Trial Completed') monthData.trialsCompleted += 1;
-        if (lead.stage?.includes('Trial')) monthData.trialsScheduled += 1;
-        if (lead.stage === 'Proximity Issues') monthData.proximityIssues += 1;
-        if (lead.conversionStatus === 'Converted') monthData.convertedLeads += 1;
-        
-        monthData.totalLTV += lead.ltv || 0;
-        monthData.totalVisits += lead.visits || 0;
       }
-      
-      return acc;
-    }, {} as Record<string, Record<string, any>>);
 
-    // Convert to table format
-    return Object.keys(sourceData).map(source => {
-      const sourceStats = sourceData[source];
-      const result: any = { source };
-      
-      months.forEach(month => {
-        const monthData = sourceStats[month.key] || {
-          totalLeads: 0,
-          trialsCompleted: 0,
-          trialsScheduled: 0,
-          proximityIssues: 0,
-          convertedLeads: 0,
-          totalLTV: 0,
-          totalVisits: 0
-        };
-        
-        // Calculate derived metrics
-        const trialToMemberRate = monthData.trialsCompleted > 0 ? (monthData.convertedLeads / monthData.trialsCompleted) * 100 : 0;
-        const leadToTrialRate = monthData.totalLeads > 0 ? (monthData.trialsCompleted / monthData.totalLeads) * 100 : 0;
-        const leadToMemberRate = monthData.totalLeads > 0 ? (monthData.convertedLeads / monthData.totalLeads) * 100 : 0;
-        const avgLTV = monthData.totalLeads > 0 ? monthData.totalLTV / monthData.totalLeads : 0;
-        const avgVisits = monthData.totalLeads > 0 ? monthData.totalVisits / monthData.totalLeads : 0;
-        const pipelineHealth = monthData.totalLeads > 0 ? ((monthData.totalLeads - monthData.proximityIssues) / monthData.totalLeads) * 100 : 0;
-        
-        result[month.key] = {
-          totalLeads: monthData.totalLeads,
-          trialsCompleted: monthData.trialsCompleted,
-          trialsScheduled: monthData.trialsScheduled,
-          proximityIssues: monthData.proximityIssues,
-          convertedLeads: monthData.convertedLeads,
-          trialToMemberRate,
-          leadToTrialRate,
-          leadToMemberRate,
-          ltv: avgLTV,
-          avgVisits,
-          pipelineHealth
-        };
-      });
-      
-      return result;
-    }).filter(source => {
-      // Filter out sources with no data
-      return months.some(month => source[month.key]?.totalLeads > 0);
-    });
-  }, [data, months]);
-
-  // Calculate totals for footer
-  const totals = useMemo(() => {
-    const result: any = { source: 'TOTALS' };
-    
-    months.forEach(month => {
-      const monthTotals = processedData.reduce((acc, source) => {
-        const monthData = source[month.key] || {};
-        acc.totalLeads += monthData.totalLeads || 0;
-        acc.trialsCompleted += monthData.trialsCompleted || 0;
-        acc.trialsScheduled += monthData.trialsScheduled || 0;
-        acc.proximityIssues += monthData.proximityIssues || 0;
-        acc.convertedLeads += monthData.convertedLeads || 0;
-        acc.totalLTV += (monthData.ltv || 0) * (monthData.totalLeads || 0);
-        acc.totalVisits += (monthData.avgVisits || 0) * (monthData.totalLeads || 0);
-        return acc;
-      }, {
-        totalLeads: 0,
-        trialsCompleted: 0,
-        trialsScheduled: 0,
-        proximityIssues: 0,
-        convertedLeads: 0,
-        totalLTV: 0,
-        totalVisits: 0
-      });
-      
-      const trialToMemberRate = monthTotals.trialsCompleted > 0 ? (monthTotals.convertedLeads / monthTotals.trialsCompleted) * 100 : 0;
-      const leadToTrialRate = monthTotals.totalLeads > 0 ? (monthTotals.trialsCompleted / monthTotals.totalLeads) * 100 : 0;
-      const leadToMemberRate = monthTotals.totalLeads > 0 ? (monthTotals.convertedLeads / monthTotals.totalLeads) * 100 : 0;
-      const avgLTV = monthTotals.totalLeads > 0 ? monthTotals.totalLTV / monthTotals.totalLeads : 0;
-      const avgVisits = monthTotals.totalLeads > 0 ? monthTotals.totalVisits / monthTotals.totalLeads : 0;
-      const pipelineHealth = monthTotals.totalLeads > 0 ? ((monthTotals.totalLeads - monthTotals.proximityIssues) / monthTotals.totalLeads) * 100 : 0;
-      
-      result[month.key] = {
-        totalLeads: monthTotals.totalLeads,
-        trialsCompleted: monthTotals.trialsCompleted,
-        trialsScheduled: monthTotals.trialsScheduled,
-        proximityIssues: monthTotals.proximityIssues,
-        convertedLeads: monthTotals.convertedLeads,
-        trialToMemberRate,
-        leadToTrialRate,
-        leadToMemberRate,
-        ltv: avgLTV,
-        avgVisits,
-        pipelineHealth
+      return {
+        ...source,
+        recentLeads: recentMonth ? recentMonth[1].leads : 0,
+        monthOnMonthGrowth,
+        months: source.months
       };
+    }).sort((a, b) => {
+      if (sortBy === 'source') {
+        return sortOrder === 'asc' 
+          ? a.source.localeCompare(b.source)
+          : b.source.localeCompare(a.source);
+      } else if (sortBy === 'total') {
+        return sortOrder === 'asc' 
+          ? a.total - b.total 
+          : b.total - a.total;
+      } else {
+        return sortOrder === 'asc' 
+          ? a.recentLeads - b.recentLeads 
+          : b.recentLeads - a.recentLeads;
+      }
     });
-    
-    return result;
-  }, [processedData, months]);
+  }, [data, sortBy, sortOrder]);
 
-const formatValue = (value: any, metric: MetricType) => {
-    if (typeof value !== 'object' || !value) return '-';
-    
-    const metricValue = value[metric];
-    if (metricValue === undefined || metricValue === 0) return '-';
-    
-    switch (metric) {
-      case 'ltv':
-        return metricValue < 1000 ? `₹${Math.round(metricValue)}` : formatCurrency(metricValue);
-      case 'trialToMemberRate':
-      case 'leadToTrialRate':
-      case 'leadToMemberRate':
-      case 'pipelineHealth':
-        return `${metricValue.toFixed(1)}%`;
-      case 'avgVisits':
-        return metricValue.toFixed(1);
-      default:
-        return formatNumber(metricValue);
+  const months = useMemo(() => {
+    const monthSet = new Set<string>();
+    data.forEach(item => {
+      const monthKey = `${item.year}-${String(item.month).padStart(2, '0')}`;
+      monthSet.add(monthKey);
+    });
+    return Array.from(monthSet).sort();
+  }, [data]);
+
+  const visibleData = processedData.slice(0, visibleSources);
+
+  const tableVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { duration: 0.6 }
     }
   };
 
-  const columns = [
-    {
-      key: 'source',
-      header: 'Source',
-      render: (value: string) => (
-        <div className="font-semibold text-slate-800 min-w-[120px] truncate">
-          {value}
-        </div>
-      ),
-      align: 'left' as const
-    },
-    ...months.map(month => ({
-      key: month.key,
-      header: month.name,
-      render: (value: any) => (
-        <div className="text-center font-medium text-xs">
-          {formatValue(value, selectedMetric)}
-        </div>
-      ),
-      align: 'center' as const
-    }))
-  ];
+  const headerVariants = {
+    hidden: { opacity: 0, y: -10 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { duration: 0.4, delay: 0.2 }
+    }
+  };
 
-  const metricTabs = [
-    { value: 'totalLeads', label: 'Total Leads' },
-    { value: 'trialsCompleted', label: 'Trials Completed' },
-    { value: 'trialsScheduled', label: 'Trials Scheduled' },
-    { value: 'proximityIssues', label: 'Proximity Issues' },
-    { value: 'convertedLeads', label: 'Converted Leads' },
-    { value: 'trialToMemberRate', label: 'Trial → Member Rate' },
-    { value: 'leadToTrialRate', label: 'Lead → Trial Rate' },
-    { value: 'leadToMemberRate', label: 'Lead → Member Rate' },
-    { value: 'ltv', label: 'Average LTV' },
-    { value: 'avgVisits', label: 'Avg Visits/Lead' },
-    { value: 'pipelineHealth', label: 'Pipeline Health' }
-  ];
+  const rowVariants = {
+    hidden: { opacity: 0, x: -20 },
+    visible: {
+      opacity: 1,
+      x: 0,
+      transition: {
+        duration: 0.4
+      }
+    }
+  };
 
   return (
-    <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl">
-      <CardHeader className="bg-gradient-to-r from-red-600 via-red-700 to-red-800">
-        <CardTitle className="text-white flex items-center gap-2 text-lg font-bold">
-          <Calendar className="w-5 h-5" />
-          Month-on-Month Source Performance
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-0">
-        {/* Metric Selector */}
-        <div className="p-4 border-b border-slate-200 bg-slate-50">
-          <Tabs value={selectedMetric} onValueChange={(value) => setSelectedMetric(value as MetricType)}>
-            <TabsList className="grid w-full grid-cols-4 lg:grid-cols-6 gap-1 h-auto p-1 bg-white">
-              {metricTabs.map(tab => (
-                <TabsTrigger 
-                  key={tab.value} 
-                  value={tab.value}
-                  className="text-xs p-2 data-[state=active]:bg-red-600 data-[state=active]:text-white"
-                >
-                  {tab.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-          
-          <div className="mt-3 flex items-center gap-2">
-            <Badge variant="outline" className="text-red-600 border-red-200">
-              <BarChart3 className="w-3 h-3 mr-1" />
-              {metricTabs.find(t => t.value === selectedMetric)?.label}
+    <motion.div
+      variants={tableVariants}
+      initial="hidden"
+      animate="visible"
+      className="w-full"
+    >
+      <Card className="w-full bg-gradient-to-br from-white via-red-50/30 to-red-100/40 backdrop-blur-sm border-red-200/50 shadow-xl shadow-red-100/20">
+        <CardHeader className="pb-4">
+          <motion.div 
+            variants={headerVariants}
+            className="flex items-center justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-br from-red-500 to-red-600 rounded-lg shadow-lg">
+                <BarChart3 className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Funnel Source Performance</h3>
+                <p className="text-sm text-gray-600">Month-on-month lead generation by source</p>
+              </div>
+            </div>
+            <Badge 
+              variant="outline" 
+              className="bg-gradient-to-r from-red-500/10 to-orange-500/10 text-red-700 border-red-300/50 backdrop-blur-sm"
+            >
+              <Calendar className="w-3 h-3 mr-1" />
+              Historical Analysis
             </Badge>
-            <span className="text-xs text-slate-600">
+          </motion.div>
+          <motion.div 
+            variants={headerVariants}
+            className="flex items-center gap-2 text-xs text-slate-600 mt-2"
+          >
+            <Filter className="w-3 h-3" />
+            <span>
               Showing {processedData.length} sources across {months.length} months
             </span>
-          </div>
-        </div>
+          </motion.div>
+        </CardHeader>
 
-        {/* Table */}
-        <div className="max-h-[500px] overflow-auto">
-          <ModernDataTable
-            data={processedData}
-            columns={columns}
-            loading={false}
-            stickyHeader={true}
-            showFooter={true}
-            footerData={totals}
-            maxHeight="400px"
-            className="rounded-none"
-            headerGradient="from-red-600 to-red-700"
-            onRowClick={(row) => {
-              const filteredData = data.filter(lead => lead.source === row.source);
-              onDrillDown?.(`Source: ${row.source} - Month Analysis`, filteredData, 'month-source');
-            }}
-          />
-        </div>
+        <CardContent className="pt-0">
+          <motion.div 
+            className="overflow-x-auto"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-red-200/50">
+                  <th className="text-left py-3 px-4">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleSort('source')}
+                      className="hover:bg-red-50/50 font-medium text-gray-700"
+                    >
+                      Source
+                      {sortBy === 'source' && (
+                        sortOrder === 'asc' ? <ChevronUp className="w-4 h-4 ml-1" /> : <ChevronDown className="w-4 h-4 ml-1" />
+                      )}
+                    </Button>
+                  </th>
+                  <th className="text-right py-3 px-4">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleSort('total')}
+                      className="hover:bg-red-50/50 font-medium text-gray-700"
+                    >
+                      Total Leads
+                      {sortBy === 'total' && (
+                        sortOrder === 'asc' ? <ChevronUp className="w-4 h-4 ml-1" /> : <ChevronDown className="w-4 h-4 ml-1" />
+                      )}
+                    </Button>
+                  </th>
+                  <th className="text-right py-3 px-4">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleSort('recent')}
+                      className="hover:bg-red-50/50 font-medium text-gray-700"
+                    >
+                      Recent Month
+                      {sortBy === 'recent' && (
+                        sortOrder === 'asc' ? <ChevronUp className="w-4 h-4 ml-1" /> : <ChevronDown className="w-4 h-4 ml-1" />
+                      )}
+                    </Button>
+                  </th>
+                  <th className="text-right py-3 px-4 font-medium text-gray-700">
+                    Month-on-Month
+                  </th>
+                  <th className="text-center py-3 px-4 font-medium text-gray-700">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <AnimatePresence>
+                  {visibleData.map((source, index) => (
+                    <React.Fragment key={source.source}>
+                      <motion.tr
+                        variants={rowVariants}
+                        initial="hidden"
+                        animate="visible"
+                        exit="hidden"
+                        className="hover:bg-red-50/30 transition-colors duration-200 border-b border-red-100/30"
+                      >
+                        <td className="py-3 px-4">
+                          <div className="font-medium text-gray-900">
+                            {source.source}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <span className="font-medium text-gray-900">
+                            {formatNumber(source.total)}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <span className="font-medium text-gray-900">
+                            {formatNumber(source.recentLeads)}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            {getGrowthIcon(source.monthOnMonthGrowth)}
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getGrowthColor(source.monthOnMonthGrowth)}`}>
+                              {formatPercentage(source.monthOnMonthGrowth)}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setShowDetails(showDetails === source.source ? null : source.source)}
+                            className="hover:bg-red-50/50"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                        </td>
+                      </motion.tr>
+                      
+                      <AnimatePresence>
+                        {showDetails === source.source && (
+                          <motion.tr
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.3 }}
+                          >
+                            <td colSpan={5} className="py-4 px-4 bg-gradient-to-r from-red-50/30 to-orange-50/30">
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                {months.slice(-6).map(month => {
+                                  const monthData = source.months.get(month);
+                                  if (!monthData) return null;
+                                  
+                                  return (
+                                    <motion.div
+                                      key={month}
+                                      initial={{ opacity: 0, y: 10 }}
+                                      animate={{ opacity: 1, y: 0 }}
+                                      transition={{ duration: 0.2 }}
+                                      className="p-3 bg-white rounded-lg border border-red-200/30 shadow-sm"
+                                    >
+                                      <div className="text-sm font-medium text-gray-700 mb-1">
+                                        {new Date(month + '-01').toLocaleDateString('en-US', { 
+                                          month: 'short', 
+                                          year: 'numeric' 
+                                        })}
+                                      </div>
+                                      <div className="text-lg font-semibold text-gray-900">
+                                        {formatNumber(monthData.leads)} leads
+                                      </div>
+                                      <div className="text-xs text-gray-600">
+                                        {monthData.conversions} conversions ({monthData.conversionRate.toFixed(1)}%)
+                                      </div>
+                                    </motion.div>
+                                  );
+                                })}
+                              </div>
+                            </td>
+                          </motion.tr>
+                        )}
+                      </AnimatePresence>
+                    </React.Fragment>
+                  ))}
+                </AnimatePresence>
+              </tbody>
+            </table>
+          </motion.div>
 
-        {/* Summary Section */}
-        <div className="p-4 bg-slate-50 border-t">
-          <div className="flex items-center gap-2 mb-3">
-            <BarChart3 className="w-4 h-4 text-red-600" />
-            <h3 className="font-semibold text-slate-800 text-sm">Performance Summary</h3>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-            <div>
-              <span className="text-slate-600">Top Source (Volume):</span>
-              <div className="font-bold text-red-600">
-                {processedData.length > 0 ? processedData[0].source : 'N/A'}
-              </div>
-            </div>
-            <div>
-              <span className="text-slate-600">Active Sources:</span>
-              <div className="font-bold text-slate-800">
-                {processedData.length}
-              </div>
-            </div>
-            <div>
-              <span className="text-slate-600">Current Month Total:</span>
-              <div className="font-bold text-green-600">
-                {months.length > 0 ? formatValue(totals[months[0].key], selectedMetric) : '-'}
-              </div>
-            </div>
-            <div>
-              <span className="text-slate-600">Data Range:</span>
-              <div className="font-bold text-slate-800">
-                {months.length > 0 ? `${months[months.length - 1].name} - ${months[0].name}` : 'N/A'}
-              </div>
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+          {processedData.length > visibleSources && (
+            <motion.div 
+              className="mt-4 text-center"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+            >
+              <Button
+                variant="outline"
+                onClick={() => setVisibleSources(prev => 
+                  prev >= processedData.length ? 8 : processedData.length
+                )}
+                className="border-red-200 text-red-700 hover:bg-red-50"
+              >
+                {visibleSources >= processedData.length ? 'Show Less' : `Show All (${processedData.length})`}
+              </Button>
+            </motion.div>
+          )}
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 };
+
+export default FunnelMonthOnMonthTable;

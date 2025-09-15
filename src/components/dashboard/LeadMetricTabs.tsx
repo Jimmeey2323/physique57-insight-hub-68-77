@@ -16,40 +16,40 @@ export const LeadMetricTabs: React.FC<LeadMetricTabsProps> = ({
 }) => {
   return (
     <Tabs value={value} onValueChange={onValueChange} className={className}>
-      <TabsList className="grid w-full grid-cols-6 bg-white border border-gray-200 p-1 rounded-xl shadow-sm h-14">
+      <TabsList className="modern-tabs grid w-full grid-cols-6 h-16">
         <TabsTrigger
           value="totalLeads"
-          className="relative overflow-hidden rounded-lg px-3 py-2 font-semibold text-xs transition-all duration-200 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md hover:bg-gray-50 data-[state=active]:hover:bg-blue-700"
+          className="modern-tab-trigger tab-variant-blue"
         >
           Total Leads
         </TabsTrigger>
         <TabsTrigger
           value="leadToTrialConversion"
-          className="relative overflow-hidden rounded-lg px-3 py-2 font-semibold text-xs transition-all duration-200 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md hover:bg-gray-50 data-[state=active]:hover:bg-blue-700"
+          className="modern-tab-trigger tab-variant-purple"
         >
           Lead to Trial %
         </TabsTrigger>
         <TabsTrigger
           value="trialToMembershipConversion"
-          className="relative overflow-hidden rounded-lg px-3 py-2 font-semibold text-xs transition-all duration-200 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md hover:bg-gray-50 data-[state=active]:hover:bg-blue-700"
+          className="modern-tab-trigger tab-variant-emerald"
         >
           Trial to Member %
         </TabsTrigger>
         <TabsTrigger
           value="ltv"
-          className="relative overflow-hidden rounded-lg px-3 py-2 font-semibold text-xs transition-all duration-200 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md hover:bg-gray-50 data-[state=active]:hover:bg-blue-700"
+          className="modern-tab-trigger tab-variant-blue"
         >
           Average LTV
         </TabsTrigger>
         <TabsTrigger
           value="totalRevenue"
-          className="relative overflow-hidden rounded-lg px-3 py-2 font-semibold text-xs transition-all duration-200 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md hover:bg-gray-50 data-[state=active]:hover:bg-blue-700"
+          className="modern-tab-trigger tab-variant-rose"
         >
           Total Revenue
         </TabsTrigger>
         <TabsTrigger
           value="visitFrequency"
-          className="relative overflow-hidden rounded-lg px-3 py-2 font-semibold text-xs transition-all duration-200 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md hover:bg-gray-50 data-[state=active]:hover:bg-blue-700"
+          className="modern-tab-trigger tab-variant-purple"
         >
           Visit Frequency
         </TabsTrigger>

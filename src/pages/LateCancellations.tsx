@@ -2,7 +2,6 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLateCancellationsData } from '@/hooks/useLateCancellationsData';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
-import { RefinedLoader } from '@/components/ui/RefinedLoader';
 import { LateCancellationsMetricCards } from '@/components/dashboard/LateCancellationsMetricCards';
 import { LateCancellationsInteractiveCharts } from '@/components/dashboard/LateCancellationsInteractiveCharts';
 import { EnhancedLateCancellationsTopBottomLists } from '@/components/dashboard/EnhancedLateCancellationsTopBottomLists';
@@ -260,9 +259,7 @@ const LateCancellations = () => {
     setLoading(loading, 'Loading late cancellations data...');
   }, [loading, setLoading]);
 
-  if (isLoading) {
-    return <RefinedLoader subtitle="Loading late cancellations analytics data..." />;
-  }
+  // Remove individual loader - rely on global loader only
 
   const exportButton = (
     <AdvancedExportButton 

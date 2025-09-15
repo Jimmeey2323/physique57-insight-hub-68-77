@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 
 interface ClassPerformanceRankingTableProps {
   data: SessionData[];
+  location?: string;
 }
 
 interface GroupedClassData {
@@ -28,7 +29,7 @@ interface GroupedClassData {
   sessionCount: number;
 }
 
-export const ClassPerformanceRankingTable: React.FC<ClassPerformanceRankingTableProps> = ({ data }) => {
+export const ClassPerformanceRankingTable: React.FC<ClassPerformanceRankingTableProps> = ({ data, location }) => {
   const [selectedClass, setSelectedClass] = useState<GroupedClassData | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;

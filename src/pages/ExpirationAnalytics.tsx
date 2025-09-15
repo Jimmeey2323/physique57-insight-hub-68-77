@@ -1,20 +1,24 @@
 import React from 'react';
 import { ExpirationAnalyticsSection } from '@/components/dashboard/ExpirationAnalyticsSection';
 import { useExpirationsData } from '@/hooks/useExpirationsData';
+import { useGlobalLoading } from '@/hooks/useGlobalLoading';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Home, Calendar } from 'lucide-react';
 import { Footer } from '@/components/ui/footer';
-import { ProfessionalLoader } from '@/components/dashboard/ProfessionalLoader';
 import { ModernHeroSection } from '@/components/ui/ModernHeroSection';
 
 const ExpirationAnalytics = () => {
   const { data, loading, error } = useExpirationsData();
+  const { setLoading } = useGlobalLoading();
   const navigate = useNavigate();
 
-  if (loading) {
-    return <ProfessionalLoader variant="analytics" subtitle="Loading expirations and churn data..." />;
-  }
+  useEffect(() => {
+    setLoading(loading, 'Loading expirations and churn data...');
+  }, [loading, setLoading]);
+
+  // Remove individual loader - rely on global loader only
 
   if (error) {
     return (

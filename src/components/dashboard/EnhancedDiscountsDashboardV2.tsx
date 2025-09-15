@@ -1,31 +1,54 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronUp, Filter } from 'lucide-react';
-import { SalesData } from '@/types/dashboard';
-import { DiscountLocationSelector } from './DiscountLocationSelector';
-import { DiscountFilterSection } from './DiscountFilterSection';
-import { DiscountMetricCards } from './DiscountMetricCards';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DiscountsAnimatedMetricCards } from './DiscountsAnimatedMetricCards';
+import { AutoCloseFilterSection } from './AutoCloseFilterSection';
+import { NoteTaker } from '@/components/ui/NoteTaker';
 import { DiscountInteractiveCharts } from './DiscountInteractiveCharts';
-import { DiscountDataTable } from './DiscountDataTable';
-import { DiscountMonthOnMonthTable } from './DiscountMonthOnMonthTable';
-import { DiscountYearOnYearTable } from './DiscountYearOnYearTable';
 import { DiscountInteractiveTopBottomLists } from './DiscountInteractiveTopBottomLists';
-import { DiscountDrillDownModal } from './DiscountDrillDownModal';
-import { EnhancedDiscountBreakdownTables } from './EnhancedDiscountBreakdownTables';
 import { EnhancedDiscountDataTable } from './EnhancedDiscountDataTable';
-import { getPreviousMonthDateRange } from '@/utils/dateUtils';
+import { EnhancedDiscountBreakdownTables } from './EnhancedDiscountBreakdownTables';
+import { DiscountDrillDownModal } from './DiscountDrillDownModal';
+import { getActiveTabClasses } from '@/utils/colorThemes';
+import { SalesData } from '@/types/dashboard';
+import { cn } from '@/lib/utils';
 
 interface EnhancedDiscountsDashboardV2Props {
   data: SalesData[];
 }
 
+const locations = [
+  { id: 'all', name: 'All Locations' },
+  { id: 'kwality', name: 'Kwality House, Kemps Corner' },
+  { id: 'supreme', name: 'Supreme HQ, Bandra' },
+  { id: 'kenkere', name: 'Kenkere House' }
+];
+
+const getPreviousMonthDateRange = () => {
+  const now = new Date();
+  // For testing, let's use current month instead of previous month
+  const firstDayCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const lastDayCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  
+  const formatDate = (date: Date) => {
+    return date.toISOString().split('T')[0];
+  };
+  
+  return {
+    start: formatDate(firstDayCurrentMonth),
+    end: formatDate(lastDayCurrentMonth)
+  };
+};
+
 export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2Props> = ({ data }) => {
-  const [selectedLocation, setSelectedLocation] = useState('all');
-  const [isFilterCollapsed, setIsFilterCollapsed] = useState(true);
-  const [filters, setFilters] = useState<any>({});
+  const [activeLocation, setActiveLocation] = useState('all');
+  const [filters, setFilters] = useState<any>({
+    dateRange: { start: null, end: null },
+    category: [],
+    product: [],
+    soldBy: [],
+    paymentMethod: []
+  });
+  
   const [drillDownData, setDrillDownData] = useState<{
     isOpen: boolean;
     title: string;
@@ -36,62 +59,149 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
   // Set default date range to previous month
   useEffect(() => {
     const previousMonth = getPreviousMonthDateRange();
-    setFilters({
+    console.log('Setting default date range:', previousMonth);
+    setFilters(prev => ({
+      ...prev,
       dateRange: {
-        from: new Date(previousMonth.start),
-        to: new Date(previousMonth.end)
+        start: previousMonth.start,
+        end: previousMonth.end
       }
-    });
+    }));
   }, []);
 
-  // Filter data based on all applied filters
-  const filteredData = useMemo(() => {
-    return data.filter(item => {
-      // Location filter
-      if (selectedLocation !== 'all' && item.calculatedLocation !== selectedLocation) return false;
-      
-      // Other filters from filter section
-      if (filters.location && item.calculatedLocation !== filters.location) return false;
-      if (filters.category && item.cleanedCategory !== filters.category) return false;
-      if (filters.product && item.cleanedProduct !== filters.product) return false;
-      if (filters.soldBy) {
-        const soldBy = item.soldBy === '-' ? 'Online/System' : item.soldBy;
-        if (soldBy !== filters.soldBy) return false;
-      }
-      if (filters.paymentMethod && item.paymentMethod !== filters.paymentMethod) return false;
-      
-      // Date range filter with proper offset handling
-      if (filters.dateRange?.from || filters.dateRange?.to) {
-        const itemDate = new Date(item.paymentDate);
-        // Ensure we're comparing dates correctly without timezone issues
-        const itemDateOnly = new Date(itemDate.getFullYear(), itemDate.getMonth(), itemDate.getDate());
-        
-        if (filters.dateRange.from) {
-          const fromDate = new Date(filters.dateRange.from);
-          const fromDateOnly = new Date(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate());
-          if (itemDateOnly < fromDateOnly) return false;
-        }
-        if (filters.dateRange.to) {
-          const toDate = new Date(filters.dateRange.to);
-          const toDateOnly = new Date(toDate.getFullYear(), toDate.getMonth(), toDate.getDate());
-          if (itemDateOnly > toDateOnly) return false;
-        }
-      }
-      
-      // Discount amount filters
-      if (filters.minDiscountAmount && (item.discountAmount || 0) < filters.minDiscountAmount) return false;
-      if (filters.maxDiscountAmount && (item.discountAmount || 0) > filters.maxDiscountAmount) return false;
-      if (filters.minDiscountPercent && (item.discountPercentage || 0) < filters.minDiscountPercent) return false;
-      if (filters.maxDiscountPercent && (item.discountPercentage || 0) > filters.maxDiscountPercent) return false;
-      
-      return true;
-    });
-  }, [data, selectedLocation, filters]);
+  // Apply filters similar to sales section
+  const applyFilters = (rawData: SalesData[], includeHistoric: boolean = false) => {
+    let filtered = rawData.slice();
+    
+    console.log('Starting filter with:', filtered.length, 'records');
 
-  // Only show discounted transactions for the discount analysis
-  const discountedData = useMemo(() => {
-    return filteredData.filter(item => (item.discountAmount || 0) > 0);
+    // Apply location filter
+    if (activeLocation !== 'all') {
+      filtered = filtered.filter(item => {
+        const locationMatch = activeLocation === 'kwality' 
+          ? item.calculatedLocation === 'Kwality House, Kemps Corner' 
+          : activeLocation === 'supreme' 
+          ? item.calculatedLocation === 'Supreme HQ, Bandra' 
+          : item.calculatedLocation?.includes('Kenkere') || item.calculatedLocation === 'Kenkere House';
+        return locationMatch;
+      });
+    }
+
+    console.log('After location filter:', filtered.length, 'records');
+
+    // Apply date range filter (skip if includeHistoric is true)
+    if (!includeHistoric && (filters.dateRange.start || filters.dateRange.end)) {
+      const startDate = filters.dateRange.start ? new Date(filters.dateRange.start) : null;
+      const endDate = filters.dateRange.end ? (() => {
+        const date = new Date(filters.dateRange.end);
+        date.setHours(23, 59, 59, 999);
+        return date;
+      })() : null;
+
+      console.log('Date filtering with range:', { 
+        start: startDate?.toISOString(), 
+        end: endDate?.toISOString() 
+      });
+
+      if (startDate || endDate) {
+        filtered = filtered.filter(item => {
+          if (!item.paymentDate) return false;
+          
+          let itemDate: Date;
+          
+          // Handle multiple date formats
+          if (item.paymentDate.includes('/')) {
+            // Handle YYYY/MM/DD HH:MM:SS format
+            if (item.paymentDate.includes(' ')) {
+              const [datePart] = item.paymentDate.split(' ');
+              const [year, month, day] = datePart.split('/');
+              itemDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+            } else {
+              // Handle DD/MM/YYYY format
+              const [day, month, year] = item.paymentDate.split('/');
+              itemDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+            }
+          } else {
+            itemDate = new Date(item.paymentDate);
+          }
+          
+          if (!itemDate || isNaN(itemDate.getTime())) {
+            console.log('Invalid date for item:', item.paymentDate);
+            return false;
+          }
+          
+          const itemInRange = (!startDate || itemDate >= startDate) && (!endDate || itemDate <= endDate);
+          if (!itemInRange && console.log) {
+            console.log('Date out of range:', { 
+              paymentDate: item.paymentDate, 
+              parsed: itemDate.toISOString(),
+              inRange: itemInRange 
+            });
+          }
+          
+          return itemInRange;
+        });
+      }
+    }
+
+    // Apply category filter
+    if (filters.category && filters.category.length > 0) {
+      filtered = filtered.filter(item => 
+        filters.category.includes(item.cleanedCategory || 'Uncategorized')
+      );
+    }
+
+    // Apply product filter
+    if (filters.product && filters.product.length > 0) {
+      filtered = filtered.filter(item => 
+        filters.product.includes(item.cleanedProduct || item.paymentItem || 'Unknown')
+      );
+    }
+
+    // Apply soldBy filter
+    if (filters.soldBy && filters.soldBy.length > 0) {
+      filtered = filtered.filter(item => 
+        filters.soldBy.includes(item.soldBy || 'Unknown')
+      );
+    }
+
+    // Apply payment method filter
+    if (filters.paymentMethod && filters.paymentMethod.length > 0) {
+      filtered = filtered.filter(item => 
+        filters.paymentMethod.includes(item.paymentMethod || 'Unknown')
+      );
+    }
+
+    console.log('Final filtered data:', filtered.length, 'records');
+    return filtered;
+  };
+
+  const filteredData = useMemo(() => applyFilters(data), [data, filters, activeLocation]);
+  const allHistoricData = useMemo(() => applyFilters(data, true), [data, activeLocation]);
+
+  // For discount analysis, we need ALL sales data to calculate discount opportunities and performance
+  // Show all filtered data (both discounted and non-discounted transactions)
+  const discountAnalysisData = useMemo(() => {
+    console.log('Discount Analysis Data:', filteredData.length, 'total transactions');
+    console.log('Sample data:', filteredData.slice(0, 3));
+    return filteredData;
   }, [filteredData]);
+
+  // Separate data for components that specifically need only discounted transactions
+  const onlyDiscountedData = useMemo(() => {
+    const discounted = filteredData.filter(item => (item.discountAmount || 0) > 0);
+    console.log('Only Discounted Data:', discounted.length, 'discounted transactions');
+    return discounted;
+  }, [filteredData]);
+
+  const handleMetricClick = (metricData: any) => {
+    setDrillDownData({
+      isOpen: true,
+      title: `${metricData.title} Analysis`,
+      data: metricData.rawData || filteredData,
+      type: 'metric'
+    });
+  };
 
   const handleDrillDown = (title: string, data: any[], type: string) => {
     setDrillDownData({
@@ -102,140 +212,114 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
     });
   };
 
-  const closeDrillDown = () => {
-    setDrillDownData({ isOpen: false, title: '', data: [], type: '' });
-  };
-
-  const handleFiltersChange = (newFilters: any) => {
-    setFilters(newFilters);
-  };
-
-  const toggleFilterCollapse = () => {
-    setIsFilterCollapsed(!isFilterCollapsed);
+  const resetFilters = () => {
+    const previousMonth = getPreviousMonthDateRange();
+    
+    setFilters({
+      dateRange: {
+        start: previousMonth.start,
+        end: previousMonth.end
+      },
+      category: [],
+      product: [],
+      soldBy: [],
+      paymentMethod: []
+    });
   };
 
   return (
-    <div className="space-y-6">
-      {/* Location Selector */}
-      <DiscountLocationSelector
-        data={data}
-        selectedLocation={selectedLocation}
-        onLocationChange={setSelectedLocation}
-      />
+    <div className="space-y-8">
+      {/* Note Taker Component */}
+      <div className="container mx-auto px-6">
+        <NoteTaker />
+      </div>
 
-      {/* Collapsible Filter Section */}
-      <Collapsible open={!isFilterCollapsed} onOpenChange={() => setIsFilterCollapsed(!isFilterCollapsed)}>
-        <Card className="border-0 shadow-xl bg-gradient-to-r from-indigo-50 via-purple-50 to-slate-50 backdrop-blur-sm">
-          <CollapsibleTrigger asChild>
-            <Button
-              variant="ghost"
-              className="w-full justify-between p-6 h-auto hover:bg-indigo-100/40 transition-all duration-300"
-              onClick={toggleFilterCollapse}
-            >
-              <div className="flex items-center gap-3">
-                <Filter className="w-6 h-6 text-indigo-700" />
-                <span className="text-xl font-bold text-indigo-900">
-                  Advanced Filters {Object.keys(filters).length > 0 && `(${Object.keys(filters).length} active)`}
-                </span>
+      {/* Filter and Location Tabs */}
+      <div className="container mx-auto px-6 space-y-6">
+        <Tabs value={activeLocation} onValueChange={setActiveLocation} className="w-full">
+          <div className="flex justify-center mb-8">
+            <TabsList className="bg-white/90 backdrop-blur-sm p-2 rounded-2xl shadow-xl border-0 grid grid-cols-4 w-full max-w-7xl min-h-24 overflow-hidden">
+              {locations.map(location => (
+                <TabsTrigger 
+                  key={location.id} 
+                  value={location.id} 
+                  className="relative px-6 py-4 font-semibold text-gray-800 transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-600 data-[state=active]:to-amber-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50 text-2xl rounded-2xl"
+                >
+                  <div className="relative z-10 text-center">
+                    <div className="font-bold">{location.name.split(',')[0]}</div>
+                    <div className="text-xs opacity-80">{location.name.split(',')[1]?.trim()}</div>
+                  </div>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
+
+          {locations.map(location => (
+            <TabsContent key={location.id} value={location.id} className="space-y-8">
+              <div className="w-full">
+                <AutoCloseFilterSection
+                  filters={filters} 
+                  onFiltersChange={setFilters} 
+                  onReset={resetFilters} 
+                />
               </div>
-              {isFilterCollapsed ? (
-                <ChevronDown className="w-6 h-6 text-indigo-700" />
-              ) : (
-                <ChevronUp className="w-6 h-6 text-indigo-700" />
-              )}
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <div className="px-6 pb-6 border-t border-indigo-200/50 bg-white/30 backdrop-blur-sm">
-              <DiscountFilterSection
-                data={data}
-                onFiltersChange={handleFiltersChange}
-                isCollapsed={false}
-                onToggleCollapse={toggleFilterCollapse}
+
+              {/* Modern Animated Metric Cards */}
+              <DiscountsAnimatedMetricCards 
+                data={discountAnalysisData} 
+                onMetricClick={handleMetricClick}
               />
-            </div>
-          </CollapsibleContent>
-        </Card>
-      </Collapsible>
 
-      {/* Enhanced Metric Cards */}
-      <DiscountMetricCards 
-        data={discountedData} 
-        filters={filters}
-        onDrillDown={handleDrillDown}
-      />
+              <DiscountInteractiveCharts data={allHistoricData} />
 
-      {/* Main Content Tabs */}
-      <Tabs defaultValue="detailed" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5 bg-gradient-to-r from-indigo-100 via-purple-100 to-slate-100 p-1 rounded-xl shadow-lg border border-indigo-200/50">
-          <TabsTrigger value="detailed" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-indigo-800 font-semibold transition-all duration-300">
-            Data Tables
-          </TabsTrigger>
-          <TabsTrigger value="breakdown" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-indigo-800 font-semibold transition-all duration-300">
-            Breakdowns
-          </TabsTrigger>
-          <TabsTrigger value="trends" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-indigo-800 font-semibold transition-all duration-300">
-            Trends
-          </TabsTrigger>
-          <TabsTrigger value="analytics" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-indigo-800 font-semibold transition-all duration-300">
-            Analytics
-          </TabsTrigger>
-          <TabsTrigger value="overview" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-indigo-800 font-semibold transition-all duration-300">
-            Overview
-          </TabsTrigger>
-        </TabsList>
+              <DiscountInteractiveTopBottomLists 
+                data={discountAnalysisData} 
+                onDrillDown={handleDrillDown}
+              />
 
-        <TabsContent value="overview" className="space-y-6">
-          <DiscountInteractiveCharts data={discountedData} />
-          <DiscountInteractiveTopBottomLists 
-            data={discountedData} 
-            onDrillDown={handleDrillDown}
-          />
-        </TabsContent>
+              {/* Main Content Tabs */}
+              <Tabs defaultValue="detailed" className="space-y-6">
+                <TabsList className="grid w-full grid-cols-3 bg-gradient-to-r from-orange-100 via-amber-100 to-yellow-100 p-1 rounded-xl shadow-lg border border-orange-200/50">
+                  <TabsTrigger value="detailed" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-orange-800 font-semibold transition-all duration-300">
+                    Data Tables
+                  </TabsTrigger>
+                  <TabsTrigger value="breakdown" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-orange-800 font-semibold transition-all duration-300">
+                    Breakdowns
+                  </TabsTrigger>
+                  <TabsTrigger value="analytics" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-orange-800 font-semibold transition-all duration-300">
+                    Analytics
+                  </TabsTrigger>
+                </TabsList>
 
-        <TabsContent value="analytics" className="space-y-6">
-          <DiscountInteractiveCharts data={discountedData} />
-        </TabsContent>
+                <TabsContent value="analytics" className="space-y-6">
+                  <DiscountInteractiveCharts data={discountAnalysisData} />
+                </TabsContent>
 
-        <TabsContent value="trends" className="space-y-6">
-          <div className="grid gap-6">
-            <DiscountMonthOnMonthTable 
-              data={discountedData} 
-            />
-            <DiscountYearOnYearTable 
-              data={discountedData} 
-            />
-          </div>
-        </TabsContent>
+                <TabsContent value="detailed" className="space-y-6">
+                  <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-xl p-6 border border-orange-200/50">
+                    <EnhancedDiscountDataTable 
+                      data={discountAnalysisData}
+                      onRowClick={(title, data, type) => handleDrillDown(title, data, type)}
+                    />
+                  </div>
+                </TabsContent>
 
-        <TabsContent value="rankings" className="space-y-6">
-          <DiscountInteractiveTopBottomLists 
-            data={discountedData} 
-            onDrillDown={handleDrillDown}
-          />
-        </TabsContent>
-
-        <TabsContent value="detailed" className="space-y-6">
-          <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-xl p-6 border border-indigo-200/50">
-            <EnhancedDiscountDataTable 
-              data={discountedData}
-              onRowClick={(title, data, type) => handleDrillDown(title, data, type)}
-            />
-          </div>
-        </TabsContent>
-
-        <TabsContent value="breakdown" className="space-y-6">
-          <EnhancedDiscountBreakdownTables 
-            data={discountedData}
-            onDrillDown={handleDrillDown}
-          />
-        </TabsContent>
-      </Tabs>
+                <TabsContent value="breakdown" className="space-y-6">
+                  <EnhancedDiscountBreakdownTables 
+                    data={discountAnalysisData}
+                    onDrillDown={handleDrillDown}
+                  />
+                </TabsContent>
+              </Tabs>
+            </TabsContent>
+          ))}
+        </Tabs>
+      </div>
 
       {/* Drill Down Modal */}
       <DiscountDrillDownModal
         isOpen={drillDownData.isOpen}
-        onClose={closeDrillDown}
+        onClose={() => setDrillDownData({ isOpen: false, title: '', data: [], type: '' })}
         title={drillDownData.title}
         data={drillDownData.data}
         type={drillDownData.type}

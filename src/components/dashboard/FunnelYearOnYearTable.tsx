@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ModernDataTable } from '@/components/ui/ModernDataTable';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, BarChart3, TrendingUp, TrendingDown } from 'lucide-react';
+import { Calendar, BarChart3, TrendingUp, TrendingDown, Filter } from 'lucide-react';
 import { LeadsData } from '@/types/leads';
 import { formatNumber, formatCurrency } from '@/utils/formatters';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -16,6 +17,24 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
   onDrillDown
 }) => {
   const [selectedMetric, setSelectedMetric] = useState<MetricType>('totalLeads');
+
+  const tableVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { duration: 0.6 }
+    }
+  };
+
+  const headerVariants = {
+    hidden: { opacity: 0, y: -10 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { duration: 0.4, delay: 0.2 }
+    }
+  };
   const processedData = useMemo(() => {
     if (!allData.length) return [];
     const sourceData = allData.reduce((acc, lead) => {
@@ -308,42 +327,105 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
     },
     align: 'center' as const
   }])];
-  return <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl">
-      <CardHeader className="bg-gradient-to-r from-purple-600 via-pink-600 to-red-600">
-        <CardTitle className="text-white flex items-center gap-2 text-lg font-bold">
-          <Calendar className="w-5 h-5" />
-          Year-on-Year Source Performance (All Data)
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-0">
-        {/* Metric Selector */}
-        <div className="p-4 border-b border-slate-200 bg-slate-50">
-          <Tabs value={selectedMetric} onValueChange={value => setSelectedMetric(value as MetricType)}>
-            <TabsList className="grid w-full grid-cols-4 lg:grid-cols-6 gap-1 h-auto p-1 bg-white">
-              {metricTabs.map(tab => <TabsTrigger key={tab.value} value={tab.value} className="text-xs p-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white">
-                  {tab.label}
-                </TabsTrigger>)}
-            </TabsList>
-          </Tabs>
-          
-          <div className="mt-3 flex items-center gap-2">
-            <Badge variant="outline" className="text-purple-600 border-purple-200">
-              <BarChart3 className="w-3 h-3 mr-1" />
-              {metricTabs.find(t => t.value === selectedMetric)?.label}
+  return (
+    <motion.div
+      variants={tableVariants}
+      initial="hidden"
+      animate="visible"
+      className="w-full"
+    >
+      <Card className="w-full bg-gradient-to-br from-white via-red-50/30 to-red-100/40 backdrop-blur-sm border-red-200/50 shadow-xl shadow-red-100/20">
+        <CardHeader className="pb-4">
+          <motion.div 
+            variants={headerVariants}
+            className="flex items-center justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-br from-red-500 to-red-600 rounded-lg shadow-lg">
+                <BarChart3 className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Year-on-Year Source Performance</h3>
+                <p className="text-sm text-gray-600">Historical comparison across years by source</p>
+              </div>
+            </div>
+            <Badge 
+              variant="outline" 
+              className="bg-gradient-to-r from-red-500/10 to-orange-500/10 text-red-700 border-red-300/50 backdrop-blur-sm"
+            >
+              <Calendar className="w-3 h-3 mr-1" />
+              Historical Analysis
             </Badge>
-            <span className="text-xs text-slate-600">
+          </motion.div>
+          <motion.div 
+            variants={headerVariants}
+            className="flex items-center gap-2 text-xs text-slate-600 mt-2"
+          >
+            <Filter className="w-3 h-3" />
+            <span>
               Showing {processedData.length} sources across {months.length} months
             </span>
-          </div>
-        </div>
+          </motion.div>
+        </CardHeader>
 
-        {/* Table */}
-        <div className="max-h-[500px] overflow-auto">
-          <ModernDataTable data={processedData} columns={columns} loading={false} stickyHeader={true} showFooter={true} footerData={totals} maxHeight="400px" className="rounded-none" headerGradient="from-purple-600 to-pink-600" onRowClick={row => {
-          const filteredData = allData.filter(lead => lead.source === row.source);
-          onDrillDown?.(`Source: ${row.source} - Year Analysis`, filteredData, 'year-source');
-        }} />
-        </div>
-      </CardContent>
-    </Card>;
+        <CardContent className="pt-0">
+          {/* Metric Selector */}
+          <motion.div 
+            className="p-4 mb-4 border border-red-200/50 rounded-lg bg-gradient-to-r from-red-50/30 to-orange-50/30 backdrop-blur-sm"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <Tabs value={selectedMetric} onValueChange={(value) => setSelectedMetric(value as MetricType)}>
+              <TabsList className="grid w-full grid-cols-4 lg:grid-cols-6 gap-1 h-auto p-1 bg-white/80 backdrop-blur-sm">
+                {metricTabs.map((tab) => (
+                  <TabsTrigger 
+                    key={tab.value} 
+                    value={tab.value} 
+                    className="text-xs p-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-500 data-[state=active]:to-red-600 data-[state=active]:text-white transition-all duration-200"
+                  >
+                    {tab.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+            
+            <div className="mt-3 flex items-center gap-2">
+              <Badge 
+                variant="outline" 
+                className="bg-gradient-to-r from-red-500/10 to-orange-500/10 text-red-700 border-red-300/50"
+              >
+                <BarChart3 className="w-3 h-3 mr-1" />
+                {metricTabs.find(t => t.value === selectedMetric)?.label}
+              </Badge>
+            </div>
+          </motion.div>
+
+          {/* Table */}
+          <motion.div 
+            className="max-h-[500px] overflow-auto rounded-lg border border-red-200/50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+          >
+            <ModernDataTable 
+              data={processedData} 
+              columns={columns} 
+              loading={false} 
+              stickyHeader={true} 
+              showFooter={true} 
+              footerData={totals} 
+              maxHeight="400px" 
+              className="rounded-lg" 
+              headerGradient="from-red-500 to-red-600" 
+              onRowClick={(row) => {
+                const filteredData = allData.filter(lead => lead.source === row.source);
+                onDrillDown?.(`Source: ${row.source} - Year Analysis`, filteredData, 'year-source');
+              }} 
+            />
+          </motion.div>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
 };

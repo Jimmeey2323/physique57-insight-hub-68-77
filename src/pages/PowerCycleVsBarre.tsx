@@ -3,7 +3,6 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePayrollData } from '@/hooks/usePayrollData';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
-import { ProfessionalLoader } from '@/components/dashboard/ProfessionalLoader';
 import { PowerCycleVsBarreSection } from '@/components/dashboard/PowerCycleVsBarreSection';
 import { SessionsFiltersProvider } from '@/contexts/SessionsFiltersContext';
 import { Footer } from '@/components/ui/footer';
@@ -19,9 +18,7 @@ const PowerCycleVsBarre = () => {
     }
   }, [loading, setLoading]);
 
-  if (isLoading) {
-    return <ProfessionalLoader variant="analytics" subtitle="Loading PowerCycle vs Barre vs Strength performance data..." />;
-  }
+  // Remove individual loader - rely on global loader only
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-violet-50/30 to-purple-50/20">

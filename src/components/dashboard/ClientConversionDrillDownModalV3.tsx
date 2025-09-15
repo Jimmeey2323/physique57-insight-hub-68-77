@@ -6,25 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Users, 
-  ShoppingCart, 
-  Calendar, 
-  MapPin, 
-  BarChart3, 
-  DollarSign, 
-  Activity, 
-  CreditCard,
-  Target,
-  Clock,
-  Star,
-  Zap,
-  X
-} from 'lucide-react';
+import { TrendingUp, TrendingDown, Users, ShoppingCart, Calendar, MapPin, BarChart3, DollarSign, Activity, CreditCard, Target, Clock, Star, Zap, X } from 'lucide-react';
 import { NewClientData } from '@/types/dashboard';
-
 interface ClientConversionDrillDownModalV3Props {
   isOpen: boolean;
   onClose: () => void;
@@ -32,7 +15,6 @@ interface ClientConversionDrillDownModalV3Props {
   data: any;
   type: 'month' | 'year' | 'class' | 'membership' | 'metric';
 }
-
 export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDownModalV3Props> = ({
   isOpen,
   onClose,
@@ -45,24 +27,24 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
   // Extract targeted client data based on type and drill-down context
   const clients: NewClientData[] = React.useMemo(() => {
     if (!data) return [];
-    
+
     // For metric card clicks, use the filtered clients array
     if (type === 'metric' && data.clients) {
       console.log('Drill-down V3: Using metric card filtered clients:', data.clients.length);
       return data.clients;
     }
-    
+
     // For month/year type, use the specific clients from the clicked row
     if ((type === 'month' || type === 'year') && data.clients) {
       console.log('Drill-down V3: Using targeted clients from clicked row:', data.clients.length);
       return data.clients;
     }
-    
+
     // For other types, ensure we return the array format
     if (Array.isArray(data)) {
       return data;
     }
-    
+
     // Fallback to empty array
     console.log('Drill-down V3: No targeted clients found, showing empty');
     return [];
@@ -77,23 +59,20 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
     const totalLTV = clients.reduce((sum, c) => sum + (c.ltv || 0), 0);
     const totalConversionSpan = clients.filter(c => c.conversionSpan > 0).reduce((sum, c) => sum + (c.conversionSpan || 0), 0);
     const clientsWithConversionData = clients.filter(c => c.conversionSpan > 0).length;
-    
     return {
       totalMembers,
       newMembers,
       convertedMembers,
       retainedMembers,
-      conversionRate: newMembers > 0 ? (convertedMembers / newMembers) * 100 : 0,
-      retentionRate: totalMembers > 0 ? (retainedMembers / totalMembers) * 100 : 0,
+      conversionRate: newMembers > 0 ? convertedMembers / newMembers * 100 : 0,
+      retentionRate: totalMembers > 0 ? retainedMembers / totalMembers * 100 : 0,
       avgLTV: totalMembers > 0 ? totalLTV / totalMembers : 0,
       totalLTV,
       avgConversionTime: clientsWithConversionData > 0 ? totalConversionSpan / clientsWithConversionData : 0
     };
   }, [clients]);
-
   const renderMetricCards = () => {
-    return (
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    return <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0 shadow-lg">
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-2">
@@ -137,24 +116,18 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
             <div className="text-orange-100 text-sm">Avg LTV</div>
           </CardContent>
         </Card>
-      </div>
-    );
+      </div>;
   };
-
   const renderClientTable = () => {
     if (clients.length === 0) {
-      return (
-        <Card>
+      return <Card>
           <CardContent className="p-8 text-center">
             <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-600">No client data available for this selection.</p>
           </CardContent>
-        </Card>
-      );
+        </Card>;
     }
-
-    return (
-      <Card>
+    return <Card>
         <CardHeader>
           <CardTitle className="text-lg">
             Client Details ({formatNumber(clients.length)} members)
@@ -175,43 +148,25 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {clients.slice(0, 50).map((client, index) => (
-                  <TableRow key={index} className="hover:bg-gray-50 transition-colors h-10">
+                {clients.slice(0, 50).map((client, index) => <TableRow key={index} className="hover:bg-gray-50 transition-colors h-10">
                     <TableCell className="text-xs px-3 font-medium">
                       {client.firstName} {client.lastName}
                     </TableCell>
                     <TableCell className="text-xs px-3 text-gray-600 truncate max-w-[150px]" title={client.email}>
                       {client.email}
                     </TableCell>
-                    <TableCell className="text-xs px-3 text-center">
-                      <Badge 
-                        variant={client.isNew?.toLowerCase().includes('new') ? 'default' : 'secondary'}
-                        className="text-xs"
-                      >
+                    <TableCell className="text-xs px-3 text-left rounded-t rounded-none">
+                      <Badge variant={client.isNew?.toLowerCase().includes('new') ? 'default' : 'secondary'} className="text-xs rounded min-w-44">
                         {client.isNew || 'Unknown'}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-xs px-3 text-center">
-                      <Badge 
-                        variant={client.retentionStatus?.toLowerCase().includes('retained') ? 'default' : 'secondary'}
-                        className={`text-xs ${
-                          client.retentionStatus?.toLowerCase().includes('retained') 
-                            ? 'bg-purple-100 text-purple-800' 
-                            : ''
-                        }`}
-                      >
+                      <Badge variant={client.retentionStatus?.toLowerCase().includes('retained') ? 'default' : 'secondary'} className={`text-xs ${client.retentionStatus?.toLowerCase().includes('retained') ? 'bg-purple-100 text-purple-800' : ''}`}>
                         {client.retentionStatus || 'Pending'}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-xs px-3 text-center">
-                      <Badge 
-                        variant={client.conversionStatus?.toLowerCase().includes('converted') ? 'default' : 'secondary'}
-                        className={`text-xs ${
-                          client.conversionStatus?.toLowerCase().includes('converted') 
-                            ? 'bg-green-100 text-green-800' 
-                            : ''
-                        }`}
-                      >
+                      <Badge variant={client.conversionStatus?.toLowerCase().includes('converted') ? 'default' : 'secondary'} className={`text-xs ${client.conversionStatus?.toLowerCase().includes('converted') ? 'bg-green-100 text-green-800' : ''}`}>
                         {client.conversionStatus || 'Pending'}
                       </Badge>
                     </TableCell>
@@ -221,23 +176,17 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                     <TableCell className="text-xs px-3 text-center text-gray-600 truncate max-w-[120px]" title={client.firstVisitLocation}>
                       {client.firstVisitLocation || 'Unknown'}
                     </TableCell>
-                  </TableRow>
-                ))}
+                  </TableRow>)}
               </TableBody>
             </Table>
-            {clients.length > 50 && (
-              <div className="p-4 text-center text-sm text-gray-600 bg-gray-50 border-t">
+            {clients.length > 50 && <div className="p-4 text-center text-sm text-gray-600 bg-gray-50 border-t">
                 Showing 50 of {clients.length} clients. Drill down shows only targeted data for this selection.
-              </div>
-            )}
+              </div>}
           </div>
         </CardContent>
-      </Card>
-    );
+      </Card>;
   };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+  return <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto bg-gradient-to-br from-white via-slate-50/30 to-white border-0 shadow-2xl">
         <DialogHeader className="pb-6 border-b border-slate-200">
           <div className="flex items-center justify-between">
@@ -353,6 +302,5 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
           </Tabs>
         </div>
       </DialogContent>
-    </Dialog>
-  );
+    </Dialog>;
 };

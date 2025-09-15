@@ -7,22 +7,26 @@ import { BarChart3, TrendingUp, Target, Users, Calendar, DollarSign, Activity, Z
 import { SessionData } from '@/hooks/useSessionsData';
 import { formatNumber, formatCurrency, formatPercentage } from '@/utils/formatters';
 import { ClassAttendanceDrillDownModal } from './ClassAttendanceDrillDownModal';
-
 interface ClassAttendancePerformanceTableProps {
   data: SessionData[];
+  location?: string;
 }
-
-export const ClassAttendancePerformanceTable: React.FC<ClassAttendancePerformanceTableProps> = ({ data }) => {
+export const ClassAttendancePerformanceTable: React.FC<ClassAttendancePerformanceTableProps> = ({
+  data,
+  location
+}) => {
   const [selectedMetric, setSelectedMetric] = useState('fillRate');
   const [drillDownModal, setDrillDownModal] = useState<{
     isOpen: boolean;
     classFormat: string;
     stats: any;
-  }>({ isOpen: false, classFormat: '', stats: null });
-
+  }>({
+    isOpen: false,
+    classFormat: '',
+    stats: null
+  });
   const performanceData = useMemo(() => {
     if (!data || data.length === 0) return [];
-
     const formatStats = data.reduce((acc, session) => {
       const format = session.cleanedClass || session.classType || 'Unknown';
       if (!acc[format]) {
@@ -38,44 +42,69 @@ export const ClassAttendancePerformanceTable: React.FC<ClassAttendancePerformanc
           revenueGeneratingSessions: 0
         };
       }
-      
       acc[format].totalSessions += 1;
       acc[format].totalCapacity += session.capacity || 0;
       acc[format].totalCheckedIn += session.checkedInCount || 0;
       acc[format].totalRevenue += session.totalPaid || 0;
       acc[format].totalBooked += session.bookedCount || 0;
       acc[format].totalLateCancelled += session.lateCancelledCount || 0;
-      
       if ((session.checkedInCount || 0) === 0) acc[format].emptySessions += 1;
       if ((session.totalPaid || 0) > 0) acc[format].revenueGeneratingSessions += 1;
-      
       return acc;
     }, {} as Record<string, any>);
-
     return Object.values(formatStats).map((stat: any) => ({
       ...stat,
-      fillRate: stat.totalCapacity > 0 ? (stat.totalCheckedIn / stat.totalCapacity) * 100 : 0,
-      showUpRate: stat.totalBooked > 0 ? (stat.totalCheckedIn / stat.totalBooked) * 100 : 0,
-      utilizationRate: stat.totalSessions > 0 ? ((stat.totalSessions - stat.emptySessions) / stat.totalSessions) * 100 : 0,
+      fillRate: stat.totalCapacity > 0 ? stat.totalCheckedIn / stat.totalCapacity * 100 : 0,
+      showUpRate: stat.totalBooked > 0 ? stat.totalCheckedIn / stat.totalBooked * 100 : 0,
+      utilizationRate: stat.totalSessions > 0 ? (stat.totalSessions - stat.emptySessions) / stat.totalSessions * 100 : 0,
       avgRevenue: stat.totalSessions > 0 ? stat.totalRevenue / stat.totalSessions : 0,
       revenuePerAttendee: stat.totalCheckedIn > 0 ? stat.totalRevenue / stat.totalCheckedIn : 0,
-      efficiency: stat.totalCapacity > 0 ? (stat.totalRevenue / stat.totalCapacity) : 0,
-      cancellationRate: stat.totalBooked > 0 ? (stat.totalLateCancelled / stat.totalBooked) * 100 : 0,
-      revenueEfficiency: stat.totalSessions > 0 ? (stat.revenueGeneratingSessions / stat.totalSessions) * 100 : 0
+      efficiency: stat.totalCapacity > 0 ? stat.totalRevenue / stat.totalCapacity : 0,
+      cancellationRate: stat.totalBooked > 0 ? stat.totalLateCancelled / stat.totalBooked * 100 : 0,
+      revenueEfficiency: stat.totalSessions > 0 ? stat.revenueGeneratingSessions / stat.totalSessions * 100 : 0
     })).sort((a, b) => b.totalSessions - a.totalSessions);
   }, [data]);
-
-  const metrics = [
-    { id: 'fillRate', label: 'Fill Rate', icon: Target, color: 'blue' },
-    { id: 'showUpRate', label: 'Show-up Rate', icon: Users, color: 'green' },
-    { id: 'utilizationRate', label: 'Utilization', icon: Activity, color: 'purple' },
-    { id: 'avgRevenue', label: 'Avg Revenue', icon: DollarSign, color: 'orange' },
-    { id: 'efficiency', label: 'Revenue Efficiency', icon: TrendingUp, color: 'indigo' },
-    { id: 'cancellationRate', label: 'Cancellation Rate', icon: Calendar, color: 'red' },
-    { id: 'revenueEfficiency', label: 'Revenue Sessions %', icon: Zap, color: 'pink' },
-    { id: 'revenuePerAttendee', label: 'Revenue per Attendee', icon: BarChart3, color: 'teal' }
-  ];
-
+  const metrics = [{
+    id: 'fillRate',
+    label: 'Fill Rate',
+    icon: Target,
+    color: 'blue'
+  }, {
+    id: 'showUpRate',
+    label: 'Show-up Rate',
+    icon: Users,
+    color: 'green'
+  }, {
+    id: 'utilizationRate',
+    label: 'Utilization',
+    icon: Activity,
+    color: 'purple'
+  }, {
+    id: 'avgRevenue',
+    label: 'Avg Revenue',
+    icon: DollarSign,
+    color: 'orange'
+  }, {
+    id: 'efficiency',
+    label: 'Revenue Efficiency',
+    icon: TrendingUp,
+    color: 'indigo'
+  }, {
+    id: 'cancellationRate',
+    label: 'Cancellation Rate',
+    icon: Calendar,
+    color: 'red'
+  }, {
+    id: 'revenueEfficiency',
+    label: 'Revenue Sessions %',
+    icon: Zap,
+    color: 'pink'
+  }, {
+    id: 'revenuePerAttendee',
+    label: 'Revenue per Attendee',
+    icon: BarChart3,
+    color: 'teal'
+  }];
   const getMetricValue = (row: any, metricId: string) => {
     const value = row[metricId];
     switch (metricId) {
@@ -93,7 +122,6 @@ export const ClassAttendancePerformanceTable: React.FC<ClassAttendancePerformanc
         return formatNumber(value);
     }
   };
-
   const getMetricBadgeColor = (value: number, metricId: string) => {
     if (metricId === 'cancellationRate') {
       if (value <= 10) return 'bg-green-100 text-green-800';
@@ -105,7 +133,6 @@ export const ClassAttendancePerformanceTable: React.FC<ClassAttendancePerformanc
       return 'bg-red-100 text-red-800';
     }
   };
-
   const handleDrillDown = (classFormat: string, stats: any) => {
     setDrillDownModal({
       isOpen: true,
@@ -118,13 +145,11 @@ export const ClassAttendancePerformanceTable: React.FC<ClassAttendancePerformanc
         fillRate: stats.fillRate,
         showUpRate: stats.showUpRate,
         avgRevenue: stats.avgRevenue,
-        emptySessions: stats.emptySessions,
+        emptySessions: stats.emptySessions
       }
     });
   };
-
-  return (
-    <Card className="bg-white shadow-xl border-0 rounded-2xl overflow-hidden">
+  return <Card className="bg-white shadow-xl border-0 rounded-2xl overflow-hidden">
       <CardHeader className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 text-white border-b-0">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <CardTitle className="flex items-center gap-3 text-2xl">
@@ -144,26 +169,14 @@ export const ClassAttendancePerformanceTable: React.FC<ClassAttendancePerformanc
         </div>
         
         {/* Metric Selector */}
-        <div className="flex flex-wrap gap-2 mt-6">
-          {metrics.map((metric) => {
-            const Icon = metric.icon;
-            return (
-              <Button
-                key={metric.id}
-                variant={selectedMetric === metric.id ? 'secondary' : 'ghost'}
-                size="sm"
-                onClick={() => setSelectedMetric(metric.id)}
-                className={`gap-2 text-sm transition-all duration-200 ${
-                  selectedMetric === metric.id 
-                    ? 'bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm' 
-                    : 'text-white/80 hover:text-white hover:bg-white/10'
-                }`}
-              >
+        <div className="flex flex-wrap gap-1 mt-6">
+          {metrics.map(metric => {
+          const Icon = metric.icon;
+          return <Button key={metric.id} variant={selectedMetric === metric.id ? 'secondary' : 'ghost'} size="sm" onClick={() => setSelectedMetric(metric.id)} className={`gap-2 text-sm transition-all duration-200 ${selectedMetric === metric.id ? 'bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm' : 'text-white/80 hover:text-white hover:bg-white/10'}`}>
                 <Icon className="w-4 h-4" />
                 {metric.label}
-              </Button>
-            );
-          })}
+              </Button>;
+        })}
         </div>
       </CardHeader>
       
@@ -223,12 +236,7 @@ export const ClassAttendancePerformanceTable: React.FC<ClassAttendancePerformanc
               </TableRow>
             </TableHeader>
             <TableBody>
-              {performanceData.map((row, index) => (
-                <TableRow 
-                  key={index} 
-                  className="hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-purple-50/50 transition-all duration-200 cursor-pointer group"
-                  onClick={() => handleDrillDown(row.format, row)}
-                >
+              {performanceData.map((row, index) => <TableRow key={index} className="hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-purple-50/50 transition-all duration-200 cursor-pointer group" onClick={() => handleDrillDown(row.format, row)}>
                   <TableCell className="font-medium sticky left-0 bg-white z-10 border-r border-slate-200/60 group-hover:bg-gradient-to-r group-hover:from-blue-50/50 group-hover:to-purple-50/50">
                     <div className="flex items-center justify-between p-2">
                       <div className="flex flex-col">
@@ -288,21 +296,17 @@ export const ClassAttendancePerformanceTable: React.FC<ClassAttendancePerformanc
                       </Badge>
                     </div>
                   </TableCell>
-                </TableRow>
-              ))}
+                </TableRow>)}
             </TableBody>
           </Table>
         </div>
       </CardContent>
 
       {/* Drill-down Modal */}
-      <ClassAttendanceDrillDownModal
-        isOpen={drillDownModal.isOpen}
-        onClose={() => setDrillDownModal({ isOpen: false, classFormat: '', stats: null })}
-        classFormat={drillDownModal.classFormat}
-        sessionsData={data}
-        overallStats={drillDownModal.stats || {}}
-      />
-    </Card>
-  );
+      <ClassAttendanceDrillDownModal isOpen={drillDownModal.isOpen} onClose={() => setDrillDownModal({
+      isOpen: false,
+      classFormat: '',
+      stats: null
+    })} classFormat={drillDownModal.classFormat} sessionsData={data} overallStats={drillDownModal.stats || {}} />
+    </Card>;
 };

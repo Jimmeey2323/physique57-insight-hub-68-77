@@ -22,7 +22,6 @@ import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { LeadDetailedFilterSection } from './LeadDetailedFilterSection';
 import { LeadPivotTable } from './LeadPivotTable';
 import { LeadYearOnYearSourceTable } from './LeadYearOnYearSourceTable';
-import { RefinedLoader } from '@/components/ui/RefinedLoader';
 const locations = [{
   id: 'all',
   name: 'All Locations',
@@ -396,9 +395,10 @@ const LeadsSectionContent: React.FC = () => {
     });
     return result;
   }, [filteredData, sourceMetric]);
-  if (loading) {
-    return <RefinedLoader subtitle="Processing lead performance analytics and conversion metrics..." />;
-  }
+  
+  // Remove individual loader - component should not show its own loader
+  // Parent component handles loading via global loader
+  
   if (error) {
     return <div className="min-h-screen bg-gray-50/30 flex items-center justify-center p-4">
         <Card className="p-8 bg-white shadow-lg max-w-md">

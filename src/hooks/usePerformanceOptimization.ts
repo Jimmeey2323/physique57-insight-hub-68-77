@@ -28,8 +28,11 @@ export const usePerformanceOptimization = () => {
     }
 
     // Enable performance observer for monitoring
+    let performanceObserver: PerformanceObserver | null = null;
+    const intersectionObservers: IntersectionObserver[] = [];
+    
     if ('PerformanceObserver' in window) {
-      const observer = new PerformanceObserver((list) => {
+      performanceObserver = new PerformanceObserver((list) => {
         list.getEntries().forEach((entry) => {
           // Log long tasks for debugging (reduced threshold for better detection)
           if (entry.entryType === 'longtask' && entry.duration > 100) {
@@ -39,7 +42,7 @@ export const usePerformanceOptimization = () => {
       });
 
       try {
-        observer.observe({ entryTypes: ['longtask'] });
+        performanceObserver.observe({ entryTypes: ['longtask'] });
       } catch (e) {
         // Fallback for browsers that don't support longtask
       }
@@ -63,6 +66,7 @@ export const usePerformanceOptimization = () => {
             });
           });
           imageObserver.observe(img);
+          intersectionObservers.push(imageObserver);
         }
       });
     };
@@ -72,7 +76,15 @@ export const usePerformanceOptimization = () => {
 
     // Cleanup function
     return () => {
-      // Clean up any observers or listeners if needed
+      // Clean up performance observer
+      if (performanceObserver) {
+        performanceObserver.disconnect();
+      }
+      
+      // Clean up intersection observers
+      intersectionObservers.forEach(observer => {
+        observer.disconnect();
+      });
     };
   }, []);
 };

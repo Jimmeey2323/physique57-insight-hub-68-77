@@ -1,9 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { RefinedLoader } from '@/components/ui/RefinedLoader';
 import { useSalesData } from '@/hooks/useSalesData';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { EnhancedDiscountsDashboardV2 } from '@/components/dashboard/EnhancedDiscountsDashboardV2';
-import { ModernHeroSection } from '@/components/ui/ModernHeroSection';
+import { DiscountsHeroSection } from '@/components/dashboard/DiscountsHeroSection';
 import { formatNumber, formatCurrency } from '@/utils/formatters';
 import { useNavigate } from 'react-router-dom';
 import { Footer } from '@/components/ui/footer';
@@ -96,10 +95,7 @@ const DiscountsPromotions: React.FC = () => {
     setLoading(loading, 'Loading discount and promotional analysis...');
   }, [loading, setLoading]);
 
-  if (loading) {
-    return <RefinedLoader subtitle="Loading discount and promotional analysis..." />;
-  }
-
+  // Remove individual loader - rely on global loader only
   if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50/30 to-amber-50/20">
@@ -130,13 +126,7 @@ const DiscountsPromotions: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50/30 to-amber-50/20">
-      <ModernHeroSection 
-        title="Discounts & Promotions"
-        subtitle="Advanced analytics for discount strategies, promotional impact analysis, and revenue optimization insights"
-        variant="discounts"
-        metrics={heroMetrics}
-        exportButton={exportButton}
-      />
+      <DiscountsHeroSection data={discountData} />
 
       {/* Main Content */}
       <div className="container mx-auto px-6 py-8">

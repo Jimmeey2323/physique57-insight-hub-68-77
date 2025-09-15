@@ -12,6 +12,7 @@ import { ChevronLeft, ChevronRight, ArrowUpDown, Eye, Download, Filter, Search, 
 import { SalesData, FilterOptions } from '@/types/dashboard';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
+import { getTableHeaderClasses } from '@/utils/colorThemes';
 interface DataTableProps {
   title: string;
   data: SalesData[];
@@ -539,9 +540,9 @@ export const DataTable: React.FC<DataTableProps> = ({
             <TableBody className="bg-white">
               {Object.entries(groupedData).map(([category, items]) => <React.Fragment key={category}>
                   <TableRow className="bg-gradient-to-r from-slate-100/60 to-slate-200/60 font-bold border-b border-slate-300/50 cursor-pointer hover:from-slate-200/70 hover:to-slate-300/70 transition-all duration-300" onClick={() => toggleGroupCollapse(category)}>
-                    <TableCell className="font-bold text-slate-800 sticky left-0 bg-gradient-to-r from-slate-100/90 to-slate-200/90 backdrop-blur-sm border-r border-slate-300/50 shadow-sm">
+                    <TableCell className={`font-bold sticky left-0 backdrop-blur-sm border-r shadow-sm ${getTableHeaderClasses('sales')}`}>
                       <div className="flex items-center gap-2">
-                        <ChevronDown className={cn("w-4 h-4 transition-transform", collapsedGroups.has(category) && "rotate-180")} />
+                        <ChevronDown className={cn("w-4 h-4 transition-transform text-white", collapsedGroups.has(category) && "rotate-180")} />
                         {category} ({ensureArray(items).length} items)
                       </div>
                     </TableCell>

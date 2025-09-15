@@ -74,7 +74,7 @@ export const ClientConversionMembershipTable: React.FC<ClientConversionMembershi
     },
     {
       key: 'totalMembers' as const,
-      header: 'Total Members',
+      header: 'Trials',
       align: 'center' as const,
       render: (value: number) => <span className="text-xs font-semibold text-blue-600">{formatNumber(value)}</span>
     },
@@ -85,6 +85,18 @@ export const ClientConversionMembershipTable: React.FC<ClientConversionMembershi
       render: (value: number) => <span className="text-xs font-semibold text-green-600">{formatNumber(value)}</span>
     },
     {
+      key: 'retained' as const,
+      header: 'Retained',
+      align: 'center' as const,
+      render: (value: number) => <span className="text-xs font-semibold text-purple-600">{formatNumber(value)}</span>
+    },
+    {
+      key: 'retentionRate' as const,
+      header: 'Retention %',
+      align: 'center' as const,
+      render: (value: number) => <span className="text-xs font-semibold">{value.toFixed(1)}%</span>
+    },
+    {
       key: 'converted' as const,
       header: 'Converted',
       align: 'center' as const,
@@ -92,7 +104,7 @@ export const ClientConversionMembershipTable: React.FC<ClientConversionMembershi
     },
     {
       key: 'conversionRate' as const,
-      header: 'Conv. Rate',
+      header: 'Conversion %',
       align: 'center' as const,
       render: (value: number) => (
         <div className="flex items-center justify-center gap-1">
@@ -102,18 +114,6 @@ export const ClientConversionMembershipTable: React.FC<ClientConversionMembershi
           </span>
         </div>
       )
-    },
-    {
-      key: 'retained' as const,
-      header: 'Retained',
-      align: 'center' as const,
-      render: (value: number) => <span className="text-xs font-semibold text-purple-600">{formatNumber(value)}</span>
-    },
-    {
-      key: 'retentionRate' as const,
-      header: 'Ret. Rate',
-      align: 'center' as const,
-      render: (value: number) => <span className="text-xs font-semibold">{value.toFixed(1)}%</span>
     },
     {
       key: 'avgLTV' as const,

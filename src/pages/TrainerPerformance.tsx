@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
-import { ProfessionalLoader } from '@/components/dashboard/ProfessionalLoader';
 import { EnhancedTrainerPerformanceSection } from '@/components/dashboard/EnhancedTrainerPerformanceSection';
 import { Footer } from '@/components/ui/footer';
 import { ModernHeroSection } from '@/components/ui/ModernHeroSection';
@@ -42,7 +41,7 @@ const TrainerPerformance = () => {
   }, [payrollData]);
 
   if (globalLoading) {
-    return <ProfessionalLoader variant="analytics" subtitle="Analyzing trainer performance metrics and insights..." />;
+    return null; // Global loader will handle this
   }
 
   return (

@@ -208,9 +208,7 @@ export const ComprehensiveHostedClassesTable: React.FC<ComprehensiveHostedClasse
       header: 'New',
       align: 'center' as const,
       render: (value: number) => (
-        <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-          {value}
-        </Badge>
+        <div className="font-semibold text-blue-600">{value}</div>
       )
     },
     {
@@ -234,9 +232,7 @@ export const ComprehensiveHostedClassesTable: React.FC<ComprehensiveHostedClasse
       header: 'Cancelled',
       align: 'center' as const,
       render: (value: number) => (
-        <Badge variant={value > 0 ? "outline" : "secondary"} className={value > 0 ? "text-red-600" : ""}>
-          {value}
-        </Badge>
+        <div className={`font-semibold ${value > 0 ? 'text-red-600' : 'text-gray-500'}`}>{value}</div>
       )
     },
     {
@@ -244,9 +240,7 @@ export const ComprehensiveHostedClassesTable: React.FC<ComprehensiveHostedClasse
       header: 'Retained',
       align: 'center' as const,
       render: (value: number) => (
-        <Badge variant="default" className="bg-purple-100 text-purple-800">
-          {value}
-        </Badge>
+        <div className="font-semibold text-purple-600">{value}</div>
       )
     },
     {

@@ -44,13 +44,14 @@ export const ModernDataTable: React.FC<ModernDataTableProps> = ({
   sortDirection,
   onRowClick
 }) => {
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  // Remove individual loading state - parent components handle loading via global loader
+  // if (loading) {
+  //   return (
+  //     <div className="flex items-center justify-center p-8">
+  //       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+  //     </div>
+  //   );
+  // }
 
   const formatCurrencyValue = (value: any) => {
     if (typeof value === 'string' && (value.includes('₹') || value.includes('$'))) {
@@ -73,7 +74,7 @@ export const ModernDataTable: React.FC<ModernDataTableProps> = ({
       <Table className="w-full">
         <TableHeader className={cn(
           stickyHeader && "sticky top-0 z-20",
-          "bg-gradient-to-r text-primary-foreground border-none shadow-sm",
+          "bg-slate-100 border-b border-slate-300",
           headerGradient
         )}>
           <TableRow className="border-none h-12">
@@ -81,10 +82,10 @@ export const ModernDataTable: React.FC<ModernDataTableProps> = ({
               <TableHead 
                 key={column.key} 
                 className={cn(
-                  "font-bold h-12 px-4 text-sm whitespace-nowrap text-primary-foreground",
+                  "font-bold h-12 px-4 text-sm whitespace-nowrap text-slate-900",
                   column.align === 'center' && 'text-center',
                   column.align === 'right' && 'text-right',
-                  column.sortable && 'cursor-pointer hover:bg-primary-foreground/10 transition-colors',
+                  column.sortable && 'cursor-pointer hover:bg-slate-200 transition-colors',
                   column.className
                 )}
                 onClick={() => handleSort(column)}

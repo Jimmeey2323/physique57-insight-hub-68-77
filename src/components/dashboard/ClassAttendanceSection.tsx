@@ -8,14 +8,16 @@ import { ChevronDown, ChevronUp, BarChart3, Users, Target, Filter, MapPin, Build
 import { useSessionsData, SessionData } from '@/hooks/useSessionsDataDemo';
 import { useFilteredSessionsData } from '@/hooks/useFilteredSessionsData';
 import { ClassAttendanceFilterSection } from './ClassAttendanceFilterSection';
-import { ClassAttendanceMetricCards } from './ClassAttendanceMetricCards';
+import { EnhancedClassAttendanceMetricCards } from './EnhancedClassAttendanceMetricCards';
 import { ClassAttendanceInteractiveCharts } from './ClassAttendanceInteractiveCharts';
 import { ClassAttendancePerformanceTable } from './ClassAttendancePerformanceTable';
 import { ClassAttendanceMonthOnMonthTable } from './ClassAttendanceMonthOnMonthTable';
+import { usePayrollData } from '@/hooks/usePayrollData';
 import { ClassAttendanceUtilizationTable } from './ClassAttendanceUtilizationTable';
 import { ClassAttendanceRevenueTable } from './ClassAttendanceRevenueTable';
 import { ClassAttendanceEfficiencyTable } from './ClassAttendanceEfficiencyTable';
 import { ClassPerformanceRankingTable } from './ClassPerformanceRankingTable';
+import { ClassAttendancePayrollTable } from './ClassAttendancePayrollTable';
 import { useNavigate } from 'react-router-dom';
 
 const locations = [{
@@ -39,6 +41,7 @@ const locations = [{
 export const ClassAttendanceSection: React.FC = () => {
   const navigate = useNavigate();
   const { data: sessionsData, loading, error, refetch } = useSessionsData();
+  const { data: payrollData, isLoading: payrollLoading } = usePayrollData();
   const [activeLocation, setActiveLocation] = useState('all');
   const [selectedFormats, setSelectedFormats] = useState<string[]>([]);
   const [compareWithTrainer, setCompareWithTrainer] = useState(false);
@@ -82,15 +85,8 @@ export const ClassAttendanceSection: React.FC = () => {
     );
   }, [locationFilteredData]);
 
-  if (loading) {
-    return (
-      <Card>
-        <CardContent className="p-8 text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading class attendance data...</p>
-        </CardContent>
-      </Card>
-    );
+  if (loading || payrollLoading) {
+    return null; // Global loader will handle this
   }
 
   if (error) {
@@ -144,31 +140,58 @@ export const ClassAttendanceSection: React.FC = () => {
           {locations.map(location => (
             <TabsContent key={location.id} value={location.id} className="space-y-8">
               {/* Key Metric Cards */}
-              <ClassAttendanceMetricCards data={locationFilteredData} />
+              <EnhancedClassAttendanceMetricCards data={locationFilteredData} payrollData={payrollData || []} />
 
               {/* Interactive Charts Section */}
               <ClassAttendanceInteractiveCharts data={locationFilteredData} />
 
-              {/* Performance Tables Grid */}
-              <div className="grid grid-cols-1 gap-8">
-                {/* Class Performance Ranking Table */}
-                <ClassPerformanceRankingTable data={locationFilteredData} />
+              {/* Analytics Tables Tabs */}
+              <Tabs defaultValue="performance" className="w-full">
+                <div className="flex justify-center mb-6">
+                  <TabsList className="glass-morphism p-2 rounded-2xl shadow-lg border-0 grid grid-cols-4 w-full max-w-4xl">
+                    <TabsTrigger value="performance" className="tab-modern">
+                      <div className="flex items-center gap-2">
+                        <BarChart3 className="w-4 h-4" />
+                        <span>Performance Ranking</span>
+                      </div>
+                    </TabsTrigger>
+                    <TabsTrigger value="format" className="tab-modern">
+                      <div className="flex items-center gap-2">
+                        <Target className="w-4 h-4" />
+                        <span>Format Analysis</span>
+                      </div>
+                    </TabsTrigger>
+                    <TabsTrigger value="payroll" className="tab-modern">
+                      <div className="flex items-center gap-2">
+                        <Users className="w-4 h-4" />
+                        <span>Payroll Analysis</span>
+                      </div>
+                    </TabsTrigger>
+                    <TabsTrigger value="trends" className="tab-modern">
+                      <div className="flex items-center gap-2">
+                        <BarChart3 className="w-4 h-4" />
+                        <span>Monthly Trends</span>
+                      </div>
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
 
-                {/* Class Format Performance Table */}
-                <ClassAttendancePerformanceTable data={locationFilteredData} />
+                <TabsContent value="performance">
+                  <ClassPerformanceRankingTable data={locationFilteredData} location={activeLocation} />
+                </TabsContent>
 
-                {/* Month on Month Analysis */}
-                <ClassAttendanceMonthOnMonthTable data={locationFilteredData} />
+                <TabsContent value="format">
+                  <ClassAttendancePerformanceTable data={locationFilteredData} location={activeLocation} />
+                </TabsContent>
 
-                {/* Utilization Analysis */}
-                <ClassAttendanceUtilizationTable data={locationFilteredData} />
+                <TabsContent value="payroll">
+                  <ClassAttendancePayrollTable data={payrollData || []} location={activeLocation} />
+                </TabsContent>
 
-                {/* Revenue Analysis */}
-                <ClassAttendanceRevenueTable data={locationFilteredData} />
-
-                {/* Efficiency Analysis */}
-                <ClassAttendanceEfficiencyTable data={locationFilteredData} />
-              </div>
+                <TabsContent value="trends">
+                  <ClassAttendanceMonthOnMonthTable data={locationFilteredData} payrollData={payrollData || []} location={activeLocation} />
+                </TabsContent>
+              </Tabs>
             </TabsContent>
           ))}
         </Tabs>

@@ -78,8 +78,6 @@ export const SoldByMonthOnMonthTable: React.FC<SoldByMonthOnMonthTableProps> = (
         return uniqueMembers > 0 ? totalRevenue / uniqueMembers : 0;
       case 'upt':
         return totalTransactions > 0 ? totalUnits / totalTransactions : 0;
-      case 'vat':
-        return items.reduce((sum, item) => sum + (item.paymentVAT || 0), 0);
       case 'discountValue':
         return totalDiscount;
       case 'discountPercentage':
@@ -92,7 +90,6 @@ export const SoldByMonthOnMonthTable: React.FC<SoldByMonthOnMonthTableProps> = (
   const formatMetricValue = (value: number, metric: YearOnYearMetricType) => {
     switch (metric) {
       case 'revenue':
-      case 'vat':
       case 'discountValue':
         return formatCurrency(value);
       case 'atv':

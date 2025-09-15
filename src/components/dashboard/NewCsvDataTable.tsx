@@ -5,7 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import { useNewCsvData, NewClientData } from '@/hooks/useNewCsvData';
 import { Users, Target, TrendingUp } from 'lucide-react';
 import { formatNumber } from '@/utils/formatters';
-import { LoadingSkeleton } from '@/components/ui/LoadingSkeleton';
 import { OptimizedTable } from '@/components/ui/OptimizedTable';
 import { designTokens } from '@/utils/designTokens';
 
@@ -74,7 +73,7 @@ export const NewCsvDataTable: React.FC = () => {
     }))];
   }, [data, selectedMetric]);
   if (loading) {
-    return <LoadingSkeleton type="table" />;
+    return null; // Parent component will handle loading
   }
   if (error) {
     return <Card className={`${designTokens.card.background} ${designTokens.card.shadow}`}>

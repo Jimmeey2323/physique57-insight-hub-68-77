@@ -6,7 +6,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { GlobalNoteTaker } from "@/components/ui/GlobalNoteTaker";
-import { ProfessionalLoader } from "@/components/dashboard/ProfessionalLoader";
+import { UniversalLoader } from "@/components/ui/UniversalLoader";
+import { GlobalLoader } from "@/components/ui/GlobalLoader";
 import { usePerformanceOptimization } from "@/hooks/usePerformanceOptimization";
 import { GlobalFiltersProvider } from "@/contexts/GlobalFiltersContext";
 
@@ -39,7 +40,8 @@ const App = () => {
       <BrowserRouter>
         <GlobalFiltersProvider>
           <GlobalNoteTaker />
-          <Suspense fallback={<ProfessionalLoader variant="analytics" subtitle="Loading page..." />}>
+          <GlobalLoader />
+          <Suspense fallback={<UniversalLoader variant="default" subtitle="Loading page..." />}>
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/executive-summary" element={<ExecutiveSummary />} />

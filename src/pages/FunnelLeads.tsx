@@ -1,17 +1,18 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, RefreshCw, Users, Target, TrendingUp, Home, ChevronDown, ChevronUp } from 'lucide-react';
 import { useLeadsData } from '@/hooks/useLeadsData';
+import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { useNavigate } from 'react-router-dom';
 
 // Import components
 import { FunnelLeadsFilterSection } from '@/components/dashboard/FunnelLeadsFilterSection';
 import { FunnelMetricCards } from '@/components/dashboard/FunnelMetricCards';
 import { FunnelInteractiveCharts } from '@/components/dashboard/FunnelInteractiveCharts';
-import { FunnelMonthOnMonthTable } from '@/components/dashboard/FunnelMonthOnMonthTable';
+import FunnelMonthOnMonthTable from '@/components/dashboard/FunnelMonthOnMonthTable';
 import { FunnelYearOnYearTable } from '@/components/dashboard/FunnelYearOnYearTable';
 import { EnhancedFunnelRankings } from '@/components/dashboard/EnhancedFunnelRankings';
 import { FunnelHealthMetricsTable } from '@/components/dashboard/FunnelHealthMetricsTable';
@@ -25,7 +26,12 @@ export default function FunnelLeads() {
     loading,
     error
   } = useLeadsData();
+  const { setLoading } = useGlobalLoading();
   const navigate = useNavigate();
+  
+  useEffect(() => {
+    setLoading(loading, 'Loading funnel and lead conversion data...');
+  }, [loading, setLoading]);
   const [activeLocation, setActiveLocation] = useState('all');
   const [filtersCollapsed, setFiltersCollapsed] = useState(true);
   const [drillDownModal, setDrillDownModal] = useState<{
@@ -179,11 +185,9 @@ export default function FunnelLeads() {
       type
     });
   };
-  if (loading) {
-    return <div className="min-h-screen bg-gray-50/30 flex items-center justify-center">
-        
-      </div>;
-  }
+  
+  // Remove individual loader - rely on global loader only
+  
   if (error) {
     return <div className="min-h-screen bg-gray-50/30 flex items-center justify-center p-4">
         <Card className="p-8 bg-white shadow-lg max-w-md">
@@ -371,8 +375,8 @@ export default function FunnelLeads() {
                   {/* Comprehensive Analytics Tables */}
                   <FunnelAnalyticsTables data={filteredData} onDrillDown={handleDrillDown} />
 
-                  {/* Month on Month Table */}
-                  <FunnelMonthOnMonthTable data={filteredData} onDrillDown={handleDrillDown} />
+                  {/* Month on Month Table - Uses ALL data, not filtered */}
+                  <FunnelMonthOnMonthTable data={locationFilteredData} />
 
                   {/* Year on Year Table - Uses ALL data, not filtered */}
                   <FunnelYearOnYearTable allData={locationFilteredData} onDrillDown={handleDrillDown} />

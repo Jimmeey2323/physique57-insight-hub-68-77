@@ -12,6 +12,8 @@ import { PowerCycleBarreStrengthComprehensiveCharts } from './PowerCycleBarreStr
 import { PowerCycleBarreStrengthInsightsSection } from './PowerCycleBarreStrengthInsightsSection';
 import { PowerCycleBarreStrengthDrillDownModal } from './PowerCycleBarreStrengthDrillDownModal';
 import { PayrollData } from '@/types/dashboard';
+import { getThemeColors, getActiveTabClasses } from '@/utils/colorThemes';
+import { getPreviousMonthDateRange } from '@/utils/dateUtils';
 import { 
   BarChart3, 
   Activity, 
@@ -19,8 +21,9 @@ import {
   Users, 
   Eye, 
   Zap, 
-  Dumbbell,
-  Target
+  Target,
+  Sparkles,
+  Filter
 } from 'lucide-react';
 
 interface PowerCycleBarreStrengthComprehensiveSectionProps {
@@ -30,14 +33,22 @@ interface PowerCycleBarreStrengthComprehensiveSectionProps {
 export const PowerCycleBarreStrengthComprehensiveSection: React.FC<PowerCycleBarreStrengthComprehensiveSectionProps> = ({ data }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedLocation, setSelectedLocation] = useState('all');
-  const [selectedTimeframe, setSelectedTimeframe] = useState('all');
+  const [selectedPeriod, setSelectedPeriod] = useState('all');
   const [selectedTrainer, setSelectedTrainer] = useState('all');
-  const [dateRange, setDateRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
+  
   const [drillDownData, setDrillDownData] = useState<any>(null);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+
+  // Get powercycle theme colors
+  const theme = getThemeColors('powercycle');
 
   // Filter data based on selected filters
   const filteredData = useMemo(() => {
     if (!data) return [];
+    
+    console.log('PowerCycle filtering - Input data:', data.length, 'items');
+    console.log('Sample monthYear formats:', data.slice(0, 5).map(item => item.monthYear));
+    console.log('Filters:', { selectedLocation, selectedPeriod, selectedTrainer });
     
     let filtered = [...data];
     
@@ -51,66 +62,14 @@ export const PowerCycleBarreStrengthComprehensiveSection: React.FC<PowerCycleBar
       filtered = filtered.filter(item => item.teacherName === selectedTrainer);
     }
     
-    // Apply timeframe filter
-    if (selectedTimeframe !== 'all') {
-      if (selectedTimeframe === 'custom' && (dateRange.start || dateRange.end)) {
-        filtered = filtered.filter(item => {
-          if (!item.monthYear) return false;
-          
-          const [monthName, year] = item.monthYear.split(' ');
-          const monthIndex = ['January', 'February', 'March', 'April', 'May', 'June',
-            'July', 'August', 'September', 'October', 'November', 'December'].indexOf(monthName);
-          const itemDate = new Date(parseInt(year), monthIndex, 1);
-          
-          let isInRange = true;
-          
-          if (dateRange.start) {
-            const startDate = new Date(dateRange.start);
-            startDate.setDate(1);
-            isInRange = isInRange && itemDate >= startDate;
-          }
-          
-          if (dateRange.end) {
-            const endDate = new Date(dateRange.end);
-            endDate.setMonth(endDate.getMonth() + 1, 0);
-            isInRange = isInRange && itemDate <= endDate;
-          }
-          
-          return isInRange;
-        });
-      } else if (selectedTimeframe !== 'custom') {
-        const now = new Date();
-        let startDate = new Date();
-        
-        switch (selectedTimeframe) {
-          case '3m':
-            startDate.setMonth(now.getMonth() - 3);
-            break;
-          case '6m':
-            startDate.setMonth(now.getMonth() - 6);
-            break;
-          case '1y':
-            startDate.setFullYear(now.getFullYear() - 1);
-            break;
-          default:
-            break;
-        }
-        
-        if (selectedTimeframe !== 'all') {
-          filtered = filtered.filter(item => {
-            if (!item.monthYear) return false;
-            const [monthName, year] = item.monthYear.split(' ');
-            const monthIndex = ['January', 'February', 'March', 'April', 'May', 'June',
-              'July', 'August', 'September', 'October', 'November', 'December'].indexOf(monthName);
-            const itemDate = new Date(parseInt(year), monthIndex, 1);
-            return itemDate >= startDate && itemDate <= now;
-          });
-        }
-      }
+    // Apply period filter - filter by exact monthYear match
+    if (selectedPeriod !== 'all') {
+      filtered = filtered.filter(item => item.monthYear === selectedPeriod);
     }
     
+    console.log('PowerCycle filtering - Filtered data:', filtered.length, 'items');
     return filtered;
-  }, [data, selectedLocation, selectedTimeframe, selectedTrainer, dateRange]);
+  }, [data, selectedLocation, selectedPeriod, selectedTrainer]);
 
   const handleItemClick = (item: any) => {
     setDrillDownData(item);
@@ -127,19 +86,62 @@ export const PowerCycleBarreStrengthComprehensiveSection: React.FC<PowerCycleBar
   }
 
   return (
-    <div className="space-y-8">
-      {/* Enhanced Filter Section */}
-      <PowerCycleBarreStrengthEnhancedFilterSection
-        data={data}
-        selectedLocation={selectedLocation}
-        onLocationChange={setSelectedLocation}
-        selectedTimeframe={selectedTimeframe}
-        onTimeframeChange={setSelectedTimeframe}
-        selectedTrainer={selectedTrainer}
-        onTrainerChange={setSelectedTrainer}
-        dateRange={dateRange}
-        onDateRangeChange={setDateRange}
-      />
+    <div className="space-y-8 p-6 bg-gradient-to-br from-cyan-50/50 via-white to-teal-50/30 min-h-screen">
+      {/* Modern Header with Analytics Summary */}
+      <div className="relative overflow-hidden">
+        <Card className={`bg-gradient-to-r ${theme.heroGradient} border-0 shadow-2xl backdrop-blur-sm`}>
+          <CardHeader className="relative pb-8">
+            <div className="absolute inset-0 bg-black/10 backdrop-blur-sm"></div>
+            <div className="relative z-10">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+                    <Zap className="w-8 h-8 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-3xl font-bold text-white mb-2">
+                      PowerCycle vs Barre vs Strength Analytics
+                    </CardTitle>
+                    <p className="text-white/80 text-lg">
+                      Comprehensive performance analysis across all class formats
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                    className="bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm"
+                  >
+                    <Filter className="w-4 h-4 mr-2" />
+                    {showAdvancedFilters ? 'Hide' : 'Show'} Filters
+                  </Button>
+                  <Badge className="bg-white/20 text-white border-white/30 px-3 py-1">
+                    <Sparkles className="w-4 h-4 mr-1" />
+                    Live Data
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          </CardHeader>
+        </Card>
+      </div>
+
+      {/* Enhanced Filter Section with Conditional Display */}
+      {showAdvancedFilters && (
+        <div className="transform transition-all duration-300 ease-in-out">
+          <PowerCycleBarreStrengthEnhancedFilterSection
+            data={data}
+            selectedLocation={selectedLocation}
+            onLocationChange={setSelectedLocation}
+            selectedPeriod={selectedPeriod}
+            onPeriodChange={setSelectedPeriod}
+            selectedTrainer={selectedTrainer}
+            onTrainerChange={setSelectedTrainer}
+          />
+        </div>
+      )}
 
       {/* Comprehensive Metrics Overview */}
       <PowerCycleBarreStrengthComprehensiveMetrics 
@@ -147,40 +149,62 @@ export const PowerCycleBarreStrengthComprehensiveSection: React.FC<PowerCycleBar
         onItemClick={handleItemClick}
       />
 
-      {/* Main Content Tabs */}
+      {/* Main Content Tabs with Modern Design */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <Card className="bg-gradient-to-br from-white via-blue-50/30 to-purple-50/20 border-0 shadow-xl">
-          <CardHeader className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-            <CardTitle className="text-xl font-bold flex items-center gap-3">
-              <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-                <Zap className="w-5 h-5" />
-              </div>
-              PowerCycle vs Barre vs Strength Lab Dashboard
+        <Card className="bg-gradient-to-br from-white via-cyan-50/30 to-teal-50/20 border-0 shadow-xl backdrop-blur-sm">
+          <CardHeader className={`bg-gradient-to-r ${theme.heroGradient} text-white relative overflow-hidden`}>
+            <div className="absolute inset-0 bg-gradient-to-r from-black/10 to-transparent"></div>
+            <CardTitle className="text-xl font-bold flex items-center gap-3 relative z-10">
+                <div className={`w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm`}>
+                <BarChart3 className="w-5 h-5 text-white" />
+                </div>
+              Advanced Analytics Dashboard
+              <Badge className="ml-auto bg-white/20 text-white border-white/30">
+                {filteredData.length} Records
+              </Badge>
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-4">
-            <TabsList className="grid w-full grid-cols-6 bg-gray-100 p-1 rounded-lg">
-              <TabsTrigger value="dashboard" className="text-sm font-medium">
+          <CardContent className="p-6 bg-gradient-to-br from-white to-cyan-50/20">
+            <TabsList className="grid w-full grid-cols-6 bg-gradient-to-r from-cyan-100/80 to-teal-100/80 p-2 rounded-xl shadow-inner backdrop-blur-sm border border-cyan-200/30">
+              <TabsTrigger 
+                value="dashboard" 
+                className={`text-sm font-medium transition-all duration-200 rounded-lg ${getActiveTabClasses('powercycle')}`}
+              >
                 <BarChart3 className="w-4 h-4 mr-2" />
                 Dashboard
               </TabsTrigger>
-              <TabsTrigger value="comparison" className="text-sm font-medium">
+              <TabsTrigger 
+                value="comparison" 
+                className={`text-sm font-medium transition-all duration-200 rounded-lg ${getActiveTabClasses('powercycle')}`}
+              >
                 <Target className="w-4 h-4 mr-2" />
                 Comparison
               </TabsTrigger>
-              <TabsTrigger value="rankings" className="text-sm font-medium">
+              <TabsTrigger 
+                value="rankings" 
+                className={`text-sm font-medium transition-all duration-200 rounded-lg ${getActiveTabClasses('powercycle')}`}
+              >
                 <TrendingUp className="w-4 h-4 mr-2" />
                 Rankings
               </TabsTrigger>
-              <TabsTrigger value="analytics" className="text-sm font-medium">
+              <TabsTrigger 
+                value="analytics" 
+                className={`text-sm font-medium transition-all duration-200 rounded-lg ${getActiveTabClasses('powercycle')}`}
+              >
                 <Users className="w-4 h-4 mr-2" />
-                Detailed Analytics
+                Analytics
               </TabsTrigger>
-              <TabsTrigger value="charts" className="text-sm font-medium">
+              <TabsTrigger 
+                value="charts" 
+                className={`text-sm font-medium transition-all duration-200 rounded-lg ${getActiveTabClasses('powercycle')}`}
+              >
                 <Activity className="w-4 h-4 mr-2" />
                 Charts
               </TabsTrigger>
-              <TabsTrigger value="insights" className="text-sm font-medium">
+              <TabsTrigger 
+                value="insights" 
+                className={`text-sm font-medium transition-all duration-200 rounded-lg ${getActiveTabClasses('powercycle')}`}
+              >
                 <Eye className="w-4 h-4 mr-2" />
                 Insights
               </TabsTrigger>
@@ -188,47 +212,59 @@ export const PowerCycleBarreStrengthComprehensiveSection: React.FC<PowerCycleBar
           </CardContent>
         </Card>
 
-        <TabsContent value="dashboard" className="space-y-8">
-          <PowerCycleBarreStrengthComprehensiveComparison 
-            data={filteredData} 
-            onItemClick={handleItemClick}
-          />
+        <TabsContent value="dashboard" className="space-y-8 mt-6">
+          <div className="bg-gradient-to-br from-white to-cyan-50/30 rounded-xl p-6 shadow-lg backdrop-blur-sm border border-cyan-200/30">
+            <PowerCycleBarreStrengthComprehensiveComparison 
+              data={filteredData} 
+              onItemClick={handleItemClick}
+            />
+          </div>
         </TabsContent>
 
-        <TabsContent value="comparison" className="space-y-8">
-          <PowerCycleBarreStrengthComprehensiveComparison 
-            data={filteredData} 
-            onItemClick={handleItemClick}
-            showDetailed={true}
-          />
+        <TabsContent value="comparison" className="space-y-8 mt-6">
+          <div className="bg-gradient-to-br from-white to-cyan-50/30 rounded-xl p-6 shadow-lg backdrop-blur-sm border border-cyan-200/30">
+            <PowerCycleBarreStrengthComprehensiveComparison 
+              data={filteredData} 
+              onItemClick={handleItemClick}
+              showDetailed={true}
+            />
+          </div>
         </TabsContent>
 
-        <TabsContent value="rankings" className="space-y-8">
-          <PowerCycleBarreStrengthComprehensiveRankings 
-            data={filteredData} 
-            onItemClick={handleItemClick}
-          />
+        <TabsContent value="rankings" className="space-y-8 mt-6">
+          <div className="bg-gradient-to-br from-white to-cyan-50/30 rounded-xl p-6 shadow-lg backdrop-blur-sm border border-cyan-200/30">
+            <PowerCycleBarreStrengthComprehensiveRankings 
+              data={filteredData} 
+              onItemClick={handleItemClick}
+            />
+          </div>
         </TabsContent>
 
-        <TabsContent value="analytics" className="space-y-8">
-          <PowerCycleBarreStrengthDetailedAnalytics 
-            data={filteredData} 
-            onItemClick={handleItemClick}
-          />
+        <TabsContent value="analytics" className="space-y-8 mt-6">
+          <div className="bg-gradient-to-br from-white to-cyan-50/30 rounded-xl p-6 shadow-lg backdrop-blur-sm border border-cyan-200/30">
+            <PowerCycleBarreStrengthDetailedAnalytics 
+              data={filteredData} 
+              onItemClick={handleItemClick}
+            />
+          </div>
         </TabsContent>
 
-        <TabsContent value="charts" className="space-y-8">
-          <PowerCycleBarreStrengthComprehensiveCharts 
-            data={filteredData} 
-            onItemClick={handleItemClick}
-          />
+        <TabsContent value="charts" className="space-y-8 mt-6">
+          <div className="bg-gradient-to-br from-white to-cyan-50/30 rounded-xl p-6 shadow-lg backdrop-blur-sm border border-cyan-200/30">
+            <PowerCycleBarreStrengthComprehensiveCharts 
+              data={filteredData} 
+              onItemClick={handleItemClick}
+            />
+          </div>
         </TabsContent>
 
-        <TabsContent value="insights" className="space-y-8">
-          <PowerCycleBarreStrengthInsightsSection 
-            data={filteredData} 
-            onItemClick={handleItemClick}
-          />
+        <TabsContent value="insights" className="space-y-8 mt-6">
+          <div className="bg-gradient-to-br from-white to-cyan-50/30 rounded-xl p-6 shadow-lg backdrop-blur-sm border border-cyan-200/30">
+            <PowerCycleBarreStrengthInsightsSection 
+              data={filteredData} 
+              onItemClick={handleItemClick}
+            />
+          </div>
         </TabsContent>
       </Tabs>
 

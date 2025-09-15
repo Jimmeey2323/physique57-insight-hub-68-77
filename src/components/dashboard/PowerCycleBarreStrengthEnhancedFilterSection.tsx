@@ -25,24 +25,20 @@ interface PowerCycleBarreStrengthEnhancedFilterSectionProps {
   data: PayrollData[];
   selectedLocation: string;
   onLocationChange: (location: string) => void;
-  selectedTimeframe: string;
-  onTimeframeChange: (timeframe: string) => void;
+  selectedPeriod: string;
+  onPeriodChange: (period: string) => void;
   selectedTrainer: string;
   onTrainerChange: (trainer: string) => void;
-  dateRange?: { start: Date | null; end: Date | null };
-  onDateRangeChange?: (range: { start: Date | null; end: Date | null }) => void;
 }
 
 export const PowerCycleBarreStrengthEnhancedFilterSection: React.FC<PowerCycleBarreStrengthEnhancedFilterSectionProps> = ({
   data,
   selectedLocation,
   onLocationChange,
-  selectedTimeframe,
-  onTimeframeChange,
+  selectedPeriod,
+  onPeriodChange,
   selectedTrainer,
-  onTrainerChange,
-  dateRange = { start: null, end: null },
-  onDateRangeChange = () => {}
+  onTrainerChange
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -54,33 +50,28 @@ export const PowerCycleBarreStrengthEnhancedFilterSection: React.FC<PowerCycleBa
     return { locations, trainers, monthYears };
   }, [data]);
 
-  const timeframes = [
-    { value: 'all', label: 'All Time' },
-    { value: '3m', label: 'Last 3 Months' },
-    { value: '6m', label: 'Last 6 Months' },
-    { value: '1y', label: 'Last 12 Months' },
-    { value: 'custom', label: 'Custom Date Range' }
+  const periods = [
+    { value: 'all', label: 'All Periods' },
+    ...filterOptions.monthYears.map(monthYear => ({
+      value: monthYear,
+      label: monthYear
+    }))
   ];
 
   const hasActiveFilters = selectedLocation !== 'all' || 
-    selectedTimeframe !== 'all' || 
-    selectedTrainer !== 'all' ||
-    dateRange.start || 
-    dateRange.end;
+    selectedPeriod !== 'all' || 
+    selectedTrainer !== 'all';
 
   const activeFilterCount = [
     selectedLocation !== 'all' ? 1 : 0,
-    selectedTimeframe !== 'all' ? 1 : 0,
-    selectedTrainer !== 'all' ? 1 : 0,
-    dateRange.start ? 1 : 0,
-    dateRange.end ? 1 : 0
+    selectedPeriod !== 'all' ? 1 : 0,
+    selectedTrainer !== 'all' ? 1 : 0
   ].filter(count => count > 0).length;
 
   const clearAllFilters = () => {
     onLocationChange('all');
-    onTimeframeChange('all');
+    onPeriodChange('all');
     onTrainerChange('all');
-    onDateRangeChange({ start: null, end: null });
   };
 
   return (
@@ -150,20 +141,20 @@ export const PowerCycleBarreStrengthEnhancedFilterSection: React.FC<PowerCycleBa
                 </Select>
               </div>
 
-              {/* Timeframe Filter */}
+              {/* Period Filter */}
               <div className="space-y-2">
-                <Label htmlFor="timeframe-select" className="text-slate-700 flex items-center gap-2">
+                <Label htmlFor="period-select" className="text-slate-700 flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-blue-500" />
-                  Timeframe
+                  Period
                 </Label>
-                <Select value={selectedTimeframe} onValueChange={onTimeframeChange}>
-                  <SelectTrigger id="timeframe-select" className="bg-white border-slate-200">
-                    <SelectValue placeholder="Select timeframe" />
+                <Select value={selectedPeriod} onValueChange={onPeriodChange}>
+                  <SelectTrigger id="period-select" className="bg-white border-slate-200">
+                    <SelectValue placeholder="Select period" />
                   </SelectTrigger>
                   <SelectContent className="bg-white border-slate-200">
-                    {timeframes.map(timeframe => (
-                      <SelectItem key={timeframe.value} value={timeframe.value}>
-                        {timeframe.label}
+                    {periods.map(period => (
+                      <SelectItem key={period.value} value={period.value}>
+                        {period.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -190,29 +181,6 @@ export const PowerCycleBarreStrengthEnhancedFilterSection: React.FC<PowerCycleBa
                   </SelectContent>
                 </Select>
               </div>
-
-              {/* Custom Date Range */}
-              {selectedTimeframe === 'custom' && (
-                <div className="space-y-2">
-                  <Label className="text-slate-700 flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-orange-500" />
-                    Custom Date Range
-                  </Label>
-                  <DatePickerWithRange
-                    value={{
-                      from: dateRange.start || undefined,
-                      to: dateRange.end || undefined
-                    }}
-                    onChange={(range) => 
-                      onDateRangeChange({ 
-                        start: range?.from || null, 
-                        end: range?.to || null 
-                      })
-                    }
-                    className="w-full"
-                  />
-                </div>
-              )}
             </div>
 
             {/* Filter Summary */}
@@ -225,22 +193,16 @@ export const PowerCycleBarreStrengthEnhancedFilterSection: React.FC<PowerCycleBa
                       {selectedLocation}
                     </Badge>
                   )}
-                  {selectedTimeframe !== 'all' && (
+                  {selectedPeriod !== 'all' && (
                     <Badge variant="secondary" className="bg-blue-100 text-blue-800">
                       <Calendar className="w-3 h-3 mr-1" />
-                      {timeframes.find(t => t.value === selectedTimeframe)?.label}
+                      {periods.find(p => p.value === selectedPeriod)?.label}
                     </Badge>
                   )}
                   {selectedTrainer !== 'all' && (
                     <Badge variant="secondary" className="bg-purple-100 text-purple-800">
                       <User className="w-3 h-3 mr-1" />
                       {selectedTrainer}
-                    </Badge>
-                  )}
-                  {(dateRange.start || dateRange.end) && (
-                    <Badge variant="secondary" className="bg-orange-100 text-orange-800">
-                      <Calendar className="w-3 h-3 mr-1" />
-                      Custom Range
                     </Badge>
                   )}
                 </div>

@@ -29,8 +29,6 @@ export const useDiscountAnalysis = () => {
   useEffect(() => {
     if (salesData && salesData.length > 0) {
       try {
-        console.log('Processing discount analysis data...', salesData.length, 'items');
-        
         const parseNumber = (value: any): number => {
           if (value === null || value === undefined || value === '') return 0;
           // Handle string values with currency symbols or commas
@@ -100,11 +98,7 @@ export const useDiscountAnalysis = () => {
           };
         });
 
-        console.log('Discount Analysis - Total transactions:', processedData.length);
-        console.log('Discount Analysis - Sample transaction:', processedData[0]);
-        
         setDiscountData(processedData);
-
       } catch (error) {
         console.error('Error processing discount data:', error);
         setDiscountData([]);

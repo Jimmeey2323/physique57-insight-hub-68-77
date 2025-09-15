@@ -71,21 +71,7 @@ export const ImprovedLeadsSection = () => {
   }, [leadsData, globalFilters]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 flex items-center justify-center">
-        <motion.div 
-          className="text-center space-y-6"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-        >
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto"></div>
-          <div>
-            <p className="text-slate-600 font-semibold text-lg">Loading lead analytics...</p>
-            <p className="text-slate-500 text-sm">Fetching comprehensive lead data</p>
-          </div>
-        </motion.div>
-      </div>
-    );
+    return null; // Global loader will handle this
   }
 
   if (error) {

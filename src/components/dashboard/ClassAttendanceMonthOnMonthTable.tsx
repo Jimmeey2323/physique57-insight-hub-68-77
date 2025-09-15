@@ -5,13 +5,16 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Calendar, TrendingUp, TrendingDown, Minus, Target, Users, DollarSign, Activity } from 'lucide-react';
 import { SessionData } from '@/hooks/useSessionsData';
+import { PayrollData } from '@/types/dashboard';
 import { formatNumber, formatCurrency, formatPercentage } from '@/utils/formatters';
 
 interface ClassAttendanceMonthOnMonthTableProps {
   data: SessionData[];
+  payrollData?: PayrollData[];
+  location?: string;
 }
 
-export const ClassAttendanceMonthOnMonthTable: React.FC<ClassAttendanceMonthOnMonthTableProps> = ({ data }) => {
+export const ClassAttendanceMonthOnMonthTable: React.FC<ClassAttendanceMonthOnMonthTableProps> = ({ data, payrollData, location }) => {
   const [selectedMetric, setSelectedMetric] = useState('attendance');
 
   const monthOnMonthData = useMemo(() => {

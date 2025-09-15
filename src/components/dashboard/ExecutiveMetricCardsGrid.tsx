@@ -34,14 +34,6 @@ interface ExecutiveMetricCardsGridProps {
 
 export const ExecutiveMetricCardsGrid: React.FC<ExecutiveMetricCardsGridProps> = ({ data }) => {
   const metrics = useMemo(() => {
-    console.log('Executive Metrics - Processing data:', {
-      salesCount: data.sales.length,
-      sessionsCount: data.sessions.length,
-      newClientsCount: data.newClients.length,
-      leadsCount: data.leads.length,
-      discountsCount: data.discounts?.length || 0
-    });
-
     // Calculate real metrics from actual data
     const totalRevenue = data.sales.reduce((sum, sale) => sum + (sale.paymentValue || 0), 0);
     const totalVAT = data.sales.reduce((sum, sale) => sum + (sale.paymentVAT || 0), 0);
@@ -72,24 +64,16 @@ export const ExecutiveMetricCardsGrid: React.FC<ExecutiveMetricCardsGridProps> =
     const retentionRate = newClientsCount > 0 ? (retainedClients / newClientsCount) * 100 : 0;
     const avgSessionSize = totalSessions > 0 ? totalAttendance / totalSessions : 0;
     
-    // Discount metrics
+    // Discount metrics - check both discount data and sales data for discount amounts
+    const salesDiscountAmount = data.sales?.reduce((sum, sale) => sum + (sale.discountAmount || 0), 0) || 0;
+    const salesDiscountTransactions = data.sales?.filter(sale => (sale.discountAmount || 0) > 0).length || 0;
+    
     const totalDiscountAmount = data.discounts?.reduce((sum, d) => sum + (d.discountAmount || 0), 0) || 0;
     const discountTransactions = data.discounts?.length || 0;
 
-    console.log('Executive Metrics - Calculated values:', {
-      totalRevenue,
-      netRevenue,
-      uniqueMembers,
-      newClientsCount,
-      leadConversionRate,
-      totalAttendance,
-      avgTransactionValue,
-      sessionAttendanceRate,
-      powerCycleSessions,
-      avgSessionSize,
-      totalDiscountAmount,
-      discountTransactions
-    });
+    // Use sales data if discount data is empty or zero
+    const finalDiscountAmount = totalDiscountAmount > 0 ? totalDiscountAmount : salesDiscountAmount;
+    const finalDiscountTransactions = discountTransactions > 0 ? discountTransactions : salesDiscountTransactions;
 
     return [
       {
@@ -214,23 +198,23 @@ export const ExecutiveMetricCardsGrid: React.FC<ExecutiveMetricCardsGridProps> =
       },
       {
         title: 'Discount Amount',
-        value: formatCurrency(totalDiscountAmount),
+        value: formatCurrency(finalDiscountAmount),
         change: '+5.8%',
         changeType: 'positive',
         icon: Percent,
         color: 'from-pink-500 to-rose-600',
         description: 'Total discount amount given',
-        rawValue: totalDiscountAmount
+        rawValue: finalDiscountAmount
       },
       {
         title: 'Discount Transactions',
-        value: formatNumber(discountTransactions),
+        value: formatNumber(finalDiscountTransactions),
         change: '+3.7%',
         changeType: 'positive',
         icon: ShoppingCart,
         color: 'from-amber-500 to-orange-600',
         description: 'Transactions with discounts',
-        rawValue: discountTransactions
+        rawValue: finalDiscountTransactions
       }
     ];
   }, [data]);

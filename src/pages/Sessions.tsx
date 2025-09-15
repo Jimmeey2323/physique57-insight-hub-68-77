@@ -1,14 +1,20 @@
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { SessionsSection } from '@/components/dashboard/SessionsSection';
 import { Footer } from '@/components/ui/footer';
 import { SessionsFiltersProvider } from '@/contexts/SessionsFiltersContext';
 import { ModernHeroSection } from '@/components/ui/ModernHeroSection';
 import { useSessionsData } from '@/hooks/useSessionsData';
+import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { formatNumber } from '@/utils/formatters';
 
 const Sessions = () => {
-  const { data } = useSessionsData();
+  const { data, loading } = useSessionsData();
+  const { setLoading } = useGlobalLoading();
+
+  useEffect(() => {
+    setLoading(loading, 'Loading session analytics...');
+  }, [loading, setLoading]);
 
   const heroMetrics = useMemo(() => {
     if (!data || data.length === 0) return [];

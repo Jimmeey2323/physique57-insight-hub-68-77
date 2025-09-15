@@ -1,9 +1,10 @@
 
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { 
   TrendingUp, 
   Users, 
@@ -47,6 +48,7 @@ export const ComprehensiveExecutiveDashboard = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const { filters } = useGlobalFilters();
+  const { setLoading } = useGlobalLoading();
 
   // Load real data from hooks
   const { data: salesData, loading: salesLoading } = useSalesData();
@@ -55,6 +57,12 @@ export const ComprehensiveExecutiveDashboard = () => {
   const { data: newClientsData, loading: newClientsLoading } = useNewClientData();
   const { data: leadsData, loading: leadsLoading } = useLeadsData();
   const { data: discountData, loading: discountLoading } = useDiscountAnalysis();
+
+  const isLoading = salesLoading || sessionsLoading || payrollLoading || newClientsLoading || leadsLoading || discountLoading;
+
+  useEffect(() => {
+    setLoading(isLoading, 'Loading executive dashboard overview...');
+  }, [isLoading, setLoading]);
 
   // Get unique locations for the selector
   const availableLocations = useMemo(() => {
@@ -146,17 +154,8 @@ export const ComprehensiveExecutiveDashboard = () => {
     };
   }, [salesData, sessionsData, payrollData, newClientsData, leadsData, discountData, filters.location]);
 
-  const isLoading = salesLoading || sessionsLoading || payrollLoading || newClientsLoading || leadsLoading || discountLoading;
-
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-pink-50/20 flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-slate-600">Loading Executive Dashboard...</p>
-        </div>
-      </div>
-    );
+    return null; // Global loader will handle this
   }
 
   const selectedLocation = Array.isArray(filters.location) ? filters.location[0] : filters.location;
