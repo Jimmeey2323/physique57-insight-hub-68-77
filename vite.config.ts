@@ -131,5 +131,8 @@ export default defineConfig(({ mode }) => ({
   esbuild: {
     drop: mode === 'production' ? ['console', 'debugger'] : [],
     treeShaking: true,
-  }
+  },
+  define: {
+    __WS_TOKEN__: JSON.stringify(''),
+  },
 }));
